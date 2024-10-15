@@ -18,7 +18,7 @@ class AreaController extends Controller
     {
         $area = Area::with('site')->find($id);
         if (!$area) {
-            return response()->json(['message' => 'Area not found'], 404);
+            return response()->json(['message' => 'Area tidak ditemukan'], 404);
         }
         return response()->json($area);
     }
@@ -44,7 +44,7 @@ class AreaController extends Controller
     {
         $area = Area::find($id);
         if (!$area) {
-            return response()->json(['message' => 'Area not found'], 404);
+            return response()->json(['message' => 'Area tidak ditemukan'], 404);
         }
 
         $request->validate([
@@ -66,10 +66,10 @@ class AreaController extends Controller
     {
         $area = Area::find($id);
         if (!$area) {
-            return response()->json(['message' => 'Area not found'], 404);
+            return response()->json(['message' => 'Area tidak ditemukan'], 404);
         }
 
         $area->delete();
-        return response()->json(['message' => 'Area deleted successfully']);
+        return response()->json(['message' => 'Area berhasil dihapus']);
     }
 }
