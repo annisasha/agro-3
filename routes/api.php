@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Dashboard2Controller;
 use App\Http\Controllers\RealtimeController;
 use App\Http\Controllers\RiwayatController;
+use App\Http\Controllers\AreaController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -13,14 +14,18 @@ Route::get('/user', function (Request $request) {
 
 Route::get('/dashboard2/{siteId}', [Dashboard2Controller::class, 'index']);
 Route::get('/dashboard/{siteId}', [DashboardController::class, 'index']);
-// Route::get('/dashboard', function () {
-//     return 'API is working'; 
-// });
+// Route::get('/dashboard', function () {return 'API is working'; });
 
 Route::get('/realtime/{siteId}', [RealtimeController::class, 'index']);
 
 Route::get('/riwayat/{siteId}/{areaId}', [RiwayatController::class, 'index']);
 // Route::get('/riwayat/{areaId}/{start_date}/{end_date}', [RiwayatController::class, 'index']);
+
+Route::get('/areas', [AreaController::class, 'index']);  
+Route::get('/areas/{id}', [AreaController::class, 'show']);  
+Route::post('/areas', [AreaController::class, 'store']);   
+Route::put('/areas/{id}', [AreaController::class, 'update']);  
+Route::delete('/areas/{id}', [AreaController::class, 'destroy']);
 
 Route::get('/test', function() {
     return response()->json(['message' => 'Test successful']);
