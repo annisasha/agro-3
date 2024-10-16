@@ -21,11 +21,11 @@ Route::get('/realtime/{siteId}', [RealtimeController::class, 'index']);
 Route::get('/riwayat/{siteId}/{areaId}', [RiwayatController::class, 'index']);
 // Route::get('/riwayat/{areaId}/{start_date}/{end_date}', [RiwayatController::class, 'index']);
 
-Route::get('/areas', [AreaController::class, 'index']);  
-Route::get('/areas/{id}', [AreaController::class, 'show']);  
-Route::post('/areas', [AreaController::class, 'store']);   
-Route::put('/areas/{id}', [AreaController::class, 'update']);  
-Route::delete('/areas/{id}', [AreaController::class, 'destroy']);
+Route::get('/area', [AreaController::class, 'index']);  
+Route::get('/area/{id}', [AreaController::class, 'show']);  
+Route::post('/area', [AreaController::class, 'store']);   
+Route::put('/area/{id}', [AreaController::class, 'update']);  
+Route::delete('/area/{id}', [AreaController::class, 'destroy']);
 
 Route::get('/test', function() {
     return response()->json(['message' => 'Test successful']);
