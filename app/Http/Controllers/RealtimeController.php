@@ -48,7 +48,7 @@ class RealtimeController extends Controller
     // Fungsi untuk mengambil data nitrogen
     public function getNitrogen($devIds)
     {
-        $sensors = ['soil_nitro', 'soil_nitro1', 'soil_nitro2', 'soil_nitro3', 'soil_nitro5', 'soil_nitro6'];
+        $sensors = ['soil_nitro1', 'soil_nitro2', 'soil_nitro3', 'soil_nitro5', 'soil_nitro6'];
 
         $data = [];
 
@@ -78,7 +78,7 @@ class RealtimeController extends Controller
     // Fungsi untuk mengambil data fosfor
     public function getFosfor($devIds)
     {
-        $sensors = ['soil_phos', 'soil_phos1', 'soil_phos2', 'soil_phos3', 'soil_phos5', 'soil_phos6'];
+        $sensors = ['soil_phos1', 'soil_phos2', 'soil_phos3', 'soil_phos5', 'soil_phos6'];
 
         $data = [];
 
@@ -108,7 +108,7 @@ class RealtimeController extends Controller
     // Fungsi untuk mengambil data kalium
     public function getKalium($devIds)
     {
-        $sensors = ['soil_pot', 'soil_pot1', 'soil_pot2', 'soil_pot3', 'soil_pot5', 'soil_pot6'];
+        $sensors = ['soil_pot1', 'soil_pot2', 'soil_pot3', 'soil_pot5', 'soil_pot6'];
 
         $data = [];
 
@@ -138,7 +138,7 @@ class RealtimeController extends Controller
     // Fungsi untuk mengambil data TDS
     public function getTDS($devIds)
     {
-        $sensors = ['soil_tds', 'soil_tds1', 'soil_tds2', 'soil_tds3', 'soil_tds5', 'soil_tds6'];
+        $sensors = ['soil_tds1', 'soil_tds2', 'soil_tds3', 'soil_tds5', 'soil_tds6'];
 
         $data = [];
 
@@ -169,7 +169,7 @@ class RealtimeController extends Controller
     // Fungsi untuk mengambil data EC
     public function getEC($devIds)
     {
-        $sensors = ['soil_con', 'soil_con1', 'soil_con2', 'soil_con3', 'soil_con5', 'soil_con6'];
+        $sensors = ['soil_con1', 'soil_con2', 'soil_con3', 'soil_con5', 'soil_con6'];
 
         $data = [];
 
@@ -199,7 +199,7 @@ class RealtimeController extends Controller
     // Fungsi untuk mengambil data kelembapan tanah
     public function getSoilHum($devIds)
     {
-        $sensors = ['soil_hum', 'soil_hum1', 'soil_hum2', 'soil_hum3', 'soil_hum5', 'soil_hum6'];
+        $sensors = ['soil_hum1', 'soil_hum2', 'soil_hum3', 'soil_hum5', 'soil_hum6'];
 
         $data = [];
 
@@ -229,7 +229,7 @@ class RealtimeController extends Controller
     // Fungsi untuk mengambil data ph tanah
     public function getSoilPh($devIds)
     {
-        $sensors = ['soil_ph', 'soil_ph1', 'soil_ph2', 'soil_ph3', 'soil_ph5', 'soil_ph6'];
+        $sensors = ['soil_ph1', 'soil_ph2', 'soil_ph3', 'soil_ph5', 'soil_ph6'];
 
         $data = [];
 
@@ -259,7 +259,7 @@ class RealtimeController extends Controller
     // Fungsi untuk mengambil data temperature tanah
     public function getSoilTemp($devIds)
     {
-        $sensors = ['soil_temp', 'soil_temp1', 'soil_temp2', 'soil_temp3', 'soil_temp5', 'soil_temp6'];
+        $sensors = ['soil_temp1', 'soil_temp2', 'soil_temp3', 'soil_temp5', 'soil_temp6'];
 
         $data = [];
 
