@@ -26,20 +26,21 @@ class AreaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'site_id' => 'required|exists:tm_site,site_id', 
-            'type' => 'required|string|max:255',
+            'id' => 'required|string|max:32|unique:area', 
+            'name' => 'required|string|max:64',
+            'site_id' => 'required|exists:tm_site,site_id',
+            'type' => 'required|string|max:32',
         ]);
-
+    
         $area = Area::create([
+            'id' => $request->id, 
             'name' => $request->name,
             'site_id' => $request->site_id,
             'type' => $request->type,
         ]);
-
+    
         return response()->json($area, 201);  
     }
-
       public function update(Request $request, $id)
     {
         $area = Area::find($id);
@@ -48,12 +49,14 @@ class AreaController extends Controller
         }
 
         $request->validate([
-            'name' => 'required|string|max:255',
+            'id' => 'required|string|max:32|unique:area', 
+            'name' => 'required|string|max:64',
             'site_id' => 'required|exists:tm_site,site_id',
-            'type' => 'required|string|max:255',
+            'type' => 'required|string|max:32',
         ]);
 
         $area->update([
+            'id' => $request->id,
             'name' => $request->name,
             'site_id' => $request->site_id,
             'type' => $request->type,
