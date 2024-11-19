@@ -39,121 +39,184 @@ class DashboardController extends Controller
                 'age' => $plant->age(),
                 'phase' => $plant->phase(),
                 'timeto_harvest' => $plant->timetoHarvest(),
+                'pt_id' => $plant->pt_id,
             ];
         });
 
-        return response()->json([
-            'site_id' => $siteId,
-            'temperature' => $temperatureData,
-            'humidity' => $humidityData,
-            'wind' => $windData,
-            'lux' => $luxData,
-            'rain' => $rainData,
-            'plants' => $plants,
-        ]);
+        if ($plants->isEmpty()) {
+            return response()->json(['message' => 'Tidak ada tanaman pada site ini'], 404);
+        }
+
+        $todos = [];
+        foreach ($plants as $plant) {
+            $plantTodos = DB::table('tr_plant_handling')
+                ->where('pt_id', $plant['pt_id'])
+                ->where('hand_day', '>=', $plant['age'])
+                ->orderBy('hand_day')
+                ->get()
+                ->map(function ($todo) use ($plant) {
+                    // Hitung tanggal kegiatan berdasarkan tanggal tanam
+                    $plantDate = new \Carbon\Carbon($plant['pl_date_planting']);
+                    $todoDate = $plantDate->addDays($todo->hand_day); // Menambahkan hand_day ke tanggal tanam
+
+                    // Menghitung berapa hari lagi menuju kegiatan
+                    $daysRemaining = now()->startOfDay()->diffInDays($todoDate->startOfDay());
+
+                    return [
+                        'hand_title' => $todo->hand_title,
+                        'hand_desc' => $todo->hand_desc,
+                        'hand_day' => $todo->hand_day,
+                        'todo_date' => $todoDate->format('Y-m-d'), // Tanggal kegiatan
+                        'days_remaining' => $daysRemaining, // Sisa hari menuju kegiatan
+                    ];
+                });
+
+            $todos[] = [
+                'plant_id' => $plant['pl_id'],
+                'todos' => $plantTodos
+            ];
+        }
+
+        return response()->json(
+            [
+                'site_id' => $siteId,
+                'temperature' => $temperatureData,
+                'humidity' => $humidityData,
+                'wind' => $windData,
+                'lux' => $luxData,
+                'rain' => $rainData,
+                'plants' => $plants,
+                'todos' => $todos
+            ],
+            200,
+            [],
+            JSON_PRETTY_PRINT
+        );
     }
+
+
+    // Fungsi untuk mengambil batas atas batas bawah dari sensor
+    private function getSensorThresholds($ds_id)
+    {
+        return DB::table('td_device_sensor')
+            ->where('ds_id', $ds_id)
+            ->select('ds_min_value', 'ds_max_value', 'ds_min_val_warn', 'ds_max_val_warn')
+            ->first();
+    }
+
 
     // Fungsi untuk mengambil data suhu
     public function getTemperature($devIds)
     {
+        // Mengambil batas-batas sensor untuk suhu
+        $sensorLimits = $this->getSensorThresholds('temp');
+
+        $minValue = $sensorLimits->ds_min_value;
+        $maxValue = $sensorLimits->ds_max_value;
+        $minDanger = $sensorLimits->ds_min_val_warn;
+        $maxDanger = $sensorLimits->ds_max_val_warn;
+
         $data = DB::table('tm_sensor_read')
-            ->selectRaw("
-                read_value,
-                CASE
-                    WHEN read_value BETWEEN 18 AND 28 THEN 'OK'
-                    WHEN read_value < 17 THEN 'Danger, Kurangi penyiraman malam hari untuk menghindari penurunan suhu'
-                    WHEN read_value > 29 THEN 'Danger, Tambahkan irigasi untuk mengurangi efek panas'
-                    ELSE 'Warning'
-                END AS value_status
-            ")
+            ->select('read_value')
             ->where('ds_id', 'temp')
             ->whereIn('dev_id', $devIds)
             ->orderBy('read_date', 'DESC')
             ->first();
 
-        return $data;
+        $valueStatus = '';
+        $actionMessage = '';
+        $statusMessage = '';
+
+        if ($data) {
+            $readValue = $data->read_value;
+            if ($readValue >= $minValue && $readValue <= $maxValue) {
+                $valueStatus = 'OK';
+                $statusMessage = 'Suhu dalam kondisi normal';
+            } elseif ($readValue < $minDanger) {
+                $valueStatus = 'Danger';
+                $statusMessage = 'Suhu di bawah batas normal';
+                $actionMessage = 'Kurangi penyiraman malam hari untuk menghindari penurunan suhu';
+            } elseif ($readValue > $maxDanger) {
+                $valueStatus = 'Danger';
+                $statusMessage = 'Suhu di atas batas normal';
+                $actionMessage = 'Tambahkan irigasi untuk mengurangi efek panas';
+            } else {
+                $valueStatus = 'Warning';
+                $statusMessage = 'Suhu mendekati ambang batas';
+                $actionMessage = 'Periksa kondisi lebih lanjut';
+            }
+        }
+
+        return [
+            'data' => $data,
+            'value_status' => $valueStatus,
+            'status_message' => $statusMessage,
+            'action_message' => $actionMessage
+        ];
     }
+
 
     // Fungsi untuk mengambil data kelembapan
     public function getHumidity($devIds)
     {
         $data = DB::table('tm_sensor_read')
-            ->selectRaw("
-                read_value,
-                CASE
-                    WHEN read_value BETWEEN 40 AND 60 THEN 'OK'
-                    WHEN read_value < 35 THEN 'Danger, Lakukan irigasi lebih sering'
-                    WHEN read_value > 65 THEN 'Danger, Kurangi irigasi untuk mencegah kelembaban berlebihan'
-                    ELSE 'Warning'
-                END AS value_status
-            ")
+            ->select('read_value')
             ->where('ds_id', 'hum')
             ->whereIn('dev_id', $devIds)
             ->orderBy('read_date', 'DESC')
             ->first();
 
-        return $data;
+
+        return [
+            'data' => $data
+        ];
     }
 
-    // Fungsi untuk mengambil data angin
+
+    // Fungsi untuk mengambil data kecepatan angin
     public function getWind($devIds)
     {
         $data = DB::table('tm_sensor_read')
-            ->selectRaw("
-                read_value,
-                CASE
-                    WHEN read_value BETWEEN 1 AND 15 THEN 'OK'
-                    WHEN read_value > 16 THEN 'Danger, gunakan penahan angin seperti pagar tanaman'
-                    ELSE 'Warning'
-                END AS value_status
-            ")
+            ->select('read_value')
             ->where('ds_id', 'wind')
             ->whereIn('dev_id', $devIds)
             ->orderBy('read_date', 'DESC')
             ->first();
 
-        return $data;
+        return [
+            'data' => $data
+        ];
     }
+
 
     // Fungsi untuk mengambil data kecerahan
     public function getLux($devIds)
     {
         $data = DB::table('tm_sensor_read')
-            ->selectRaw("
-                read_value,
-                CASE
-                    WHEN read_value BETWEEN 10000 AND 50000 THEN 'OK'
-                    WHEN read_value < 9999 THEN 'Danger, Pastikan tanaman menerima pencahayaan yang cukup, atau gunakan lampu tambahan jika diperlukan'
-                    WHEN read_value > 50001 THEN 'Danger, Gunakan jaring peneduh untuk melindungi tanaman dari sinar matahari langsung'
-                    ELSE 'Warning'
-                END AS value_status
-            ")
+            ->select('read_value')
             ->where('ds_id', 'ilum')
             ->whereIn('dev_id', $devIds)
             ->orderBy('read_date', 'DESC')
             ->first();
 
-        return $data;
+        return [
+            'data' => $data,
+        ];
     }
+
 
     // Fungsi untuk mengambil data curah hujan
     public function getRain($devIds)
     {
         $data = DB::table('tm_sensor_read')
-            ->selectRaw("
-                read_value,
-                CASE
-                    WHEN read_value BETWEEN 50 AND 150 THEN 'OK'
-                    WHEN read_value < 45 THEN 'Danger, Lakukan irigasi tambahan untuk memenuhi kebutuhan air tanaman'
-                    WHEN read_value > 155 THEN 'Danger, Perbaiki sistem drainase untuk menghindari genangan air di sawah'
-                    ELSE 'Warning'
-                END AS value_status
-            ")
+            ->select('read_value')
             ->where('ds_id', 'rain')
             ->whereIn('dev_id', $devIds)
             ->orderBy('read_date', 'DESC')
             ->first();
 
-        return $data;
+        return [
+            'data' => $data
+        ];
     }
 }

@@ -18,11 +18,11 @@ Route::get('/user', function (Request $request) {
 
 Route::post('dashboard', [DashboardController::class, 'index']);
 
-Route::post('dashboard2', [Dashboard2Controller::class, 'index']);
+// Route::post('dashboard2', [Dashboard2Controller::class, 'index']);
 
 Route::post('realtime', [RealtimeController::class, 'index']);
 
-Route::post('realtime2', [Realtime2Controller::class, 'index']);
+// Route::post('realtime2', [Realtime2Controller::class, 'index']);
 
 Route::post('riwayat', [RiwayatController::class, 'index']);
 
