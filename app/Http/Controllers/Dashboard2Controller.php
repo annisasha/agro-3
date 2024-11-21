@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Plant;
 use Illuminate\Support\Facades\DB;
 
-class DashboardController extends Controller
+class Dashboard2Controller extends Controller
 {
     public function index(Request $request)
     {
@@ -159,6 +159,13 @@ class DashboardController extends Controller
     // Fungsi untuk mengambil data kelembapan
     public function getHumidity($devIds)
     {
+        $sensorLimits = $this->getSensorThresholds('hum');
+
+        $minValue = $sensorLimits->ds_min_value;
+        $maxValue = $sensorLimits->ds_max_value;
+        $minDanger = $sensorLimits->ds_min_val_warn;
+        $maxDanger = $sensorLimits->ds_max_val_warn;
+
         $data = DB::table('tm_sensor_read')
             ->select('read_value')
             ->where('ds_id', 'hum')
@@ -166,9 +173,35 @@ class DashboardController extends Controller
             ->orderBy('read_date', 'DESC')
             ->first();
 
+        $valueStatus = '';
+        $actionMessage = '';
+        $statusMessage = '';
+
+        if ($data) {
+            $readValue = $data->read_value;
+            if ($readValue >= $minValue && $readValue <= $maxValue) {
+                $valueStatus = 'OK';
+                $statusMessage = 'Kelembapan dalam kondisi normal';
+            } elseif ($readValue < $minDanger) {
+                $valueStatus = 'Danger';
+                $statusMessage = 'Kelembapan di bawah batas normal';
+                $actionMessage = 'Lakukan irigasi lebih sering';
+            } elseif ($readValue > $maxDanger) {
+                $valueStatus = 'Danger';
+                $statusMessage = 'Kelembapan di atas batas normal';
+                $actionMessage = 'Kurangi irigasi untuk mencegah kelembaban berlebihan';
+            } else {
+                $valueStatus = 'Warning';
+                $statusMessage = 'Kelembapan mendekati ambang batas';
+                $actionMessage = 'Periksa kondisi lebih lanjut';
+            }
+        }
 
         return [
-            'data' => $data
+            'data' => $data,
+            'value_status' => $valueStatus,
+            'status_message' => $statusMessage,
+            'action_message' => $actionMessage
         ];
     }
 
@@ -176,6 +209,13 @@ class DashboardController extends Controller
     // Fungsi untuk mengambil data kecepatan angin
     public function getWind($devIds)
     {
+        $sensorLimits = $this->getSensorThresholds('wind');
+
+        $minValue = $sensorLimits->ds_min_value;
+        $maxValue = $sensorLimits->ds_max_value;
+        $minDanger = $sensorLimits->ds_min_val_warn;
+        $maxDanger = $sensorLimits->ds_max_val_warn;
+
         $data = DB::table('tm_sensor_read')
             ->select('read_value')
             ->where('ds_id', 'wind')
@@ -183,8 +223,34 @@ class DashboardController extends Controller
             ->orderBy('read_date', 'DESC')
             ->first();
 
+        $valueStatus = '';
+        $actionMessage = '';
+        $statusMessage = '';
+
+        if ($data) {
+            $readValue = $data->read_value;
+            if ($readValue >= $minValue && $readValue <= $maxValue) {
+                $valueStatus = 'OK';
+                $statusMessage = 'Kecepatan angin dalam kondisi normal';
+            } elseif ($readValue < $minDanger) {
+                $valueStatus = 'Danger';
+                $statusMessage = 'Kecepatan angin terlalu rendah';
+                $actionMessage = 'Waspadai potensi kerusakan tanaman';
+            } elseif ($readValue > $maxDanger) {
+                $valueStatus = 'Danger';
+                $statusMessage = 'Kecepatan angin terlalu tinggi';
+                $actionMessage = 'Gunakan penahan angin seperti pagar tanaman';
+            } else {
+                $valueStatus = 'Warning';
+                $actionMessage = 'Kecepatan angin mendekati ambang batas, periksa kondisi lebih lanjut';
+            }
+        }
+
         return [
-            'data' => $data
+            'data' => $data,
+            'value_status' => $valueStatus,
+            'status_message' => $statusMessage,
+            'action_message' => $actionMessage
         ];
     }
 
@@ -192,6 +258,13 @@ class DashboardController extends Controller
     // Fungsi untuk mengambil data kecerahan
     public function getLux($devIds)
     {
+        $sensorLimits = $this->getSensorThresholds('ilum');
+
+        $minValue = $sensorLimits->ds_min_value;
+        $maxValue = $sensorLimits->ds_max_value;
+        $minDanger = $sensorLimits->ds_min_val_warn;
+        $maxDanger = $sensorLimits->ds_max_val_warn;
+
         $data = DB::table('tm_sensor_read')
             ->select('read_value')
             ->where('ds_id', 'ilum')
@@ -199,8 +272,33 @@ class DashboardController extends Controller
             ->orderBy('read_date', 'DESC')
             ->first();
 
+        $valueStatus = '';
+        $actionMessage = '';
+        $statusMessage = '';
+
+        if ($data) {
+            $readValue = $data->read_value;
+
+            if ($readValue >= $minValue && $readValue <= $maxValue) {
+                $valueStatus = 'OK';
+                $statusMessage = 'Kecerahan dalam kondisi normal';
+            } elseif ($readValue < $minDanger) {
+                $valueStatus = 'Danger';
+                $actionMessage = 'Pastikan tanaman menerima pencahayaan yang cukup, atau gunakan lampu tambahan jika diperlukan';
+            } elseif ($readValue > $maxDanger) {
+                $valueStatus = 'Danger';
+                $actionMessage = 'Gunakan jaring peneduh untuk melindungi tanaman dari sinar matahari langsung';
+            } else {
+                $valueStatus = 'Warning';
+                $actionMessage = 'Kecerahan mendekati ambang batas, periksa kondisi lebih lanjut';
+            }
+        }
+
         return [
             'data' => $data,
+            'value_status' => $valueStatus,
+            'status_message' => $statusMessage,
+            'action_message' => $actionMessage
         ];
     }
 
@@ -208,6 +306,13 @@ class DashboardController extends Controller
     // Fungsi untuk mengambil data curah hujan
     public function getRain($devIds)
     {
+        $sensorLimits = $this->getSensorThresholds('rain');
+
+        $minValue = $sensorLimits->ds_min_value;
+        $maxValue = $sensorLimits->ds_max_value;
+        $minDanger = $sensorLimits->ds_min_val_warn;
+        $maxDanger = $sensorLimits->ds_max_val_warn;
+
         $data = DB::table('tm_sensor_read')
             ->select('read_value')
             ->where('ds_id', 'rain')
@@ -215,8 +320,35 @@ class DashboardController extends Controller
             ->orderBy('read_date', 'DESC')
             ->first();
 
+        $valueStatus = '';
+        $actionMessage = '';
+        $statusMessage = '';
+
+        if ($data) {
+            $readValue = $data->read_value;
+
+            if ($readValue >= $minValue && $readValue <= $maxValue) {
+                $valueStatus = 'OK';
+                $statusMessage = 'Curah hujan dalam kondisi normal';
+            } elseif ($readValue < $minDanger) {
+                $valueStatus = 'Danger';
+                $statusMessage = 'Curah hujan kurang';
+                $actionMessage = 'Lakukan irigasi tambahan untuk memenuhi kebutuhan air tanaman';
+            } elseif ($readValue > $maxDanger) {
+                $valueStatus = 'Danger';
+                $statusMessage = 'Curah hujan terlalu tinggi';
+                $actionMessage = 'Perbaiki sistem drainase untuk menghindari genangan air di sawah';
+            } else {
+                $valueStatus = 'Warning';
+                $actionMessage = 'Curah hujan mendekati ambang batas, periksa kondisi lebih lanjut';
+            }
+        }
+
         return [
-            'data' => $data
+            'data' => $data,
+            'value_status' => $valueStatus,
+            'status_message' => $statusMessage,
+            'action_message' => $actionMessage
         ];
     }
 }

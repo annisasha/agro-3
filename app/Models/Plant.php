@@ -13,12 +13,14 @@ class Plant extends Model
     protected $table = 'tm_plant'; 
     protected $primaryKey = 'pl_id'; 
 
+    public function plantType()
+    {
+        return $this->belongsTo(PlantType::class, 'pt_id', 'pt_id');
+    }
 
     // Method untuk menghitung umur tanaman
     public function age()
     {
-        // return now()->diffInDays(Carbon::parse($this->pl_date_planting));
-
         $plantingDate = strtotime($this->pl_date_planting);
         $currentDate = time(); 
         $age = ($currentDate - $plantingDate) / (60 * 60 * 24); 
@@ -28,24 +30,35 @@ class Plant extends Model
     // Method untuk menentukan fase tanaman
     public function phase()
     {
+        // Ambil data hari panen dari relasi plantType
+        $harvestDays = $this->plantType->pt_day_harvest;
+
         $age = $this->age();
-    
-        if ($age <= 35) {
-            return 'Vegetatif Awal (V1)';
-        } elseif ($age > 35 && $age <= 55) {
-            return 'Vegetatif Akhir (V2)';
-        } elseif ($age > 55 && $age <= 85) {
-            return 'Reproduktif (G1)';
-        } elseif ($age > 85 && $age <= 120) {
-            return 'Pematangan (G2)';
+
+        if ($this->pt_id == 'PT01') { // Khusus untuk padi (PT01)
+            if ($age <= 35) {
+                return 'Vegetatif Awal (V1)';
+            } elseif ($age > 35 && $age <= 55) {
+                return 'Vegetatif Akhir (V2)';
+            } elseif ($age > 55 && $age <= 85) {
+                return 'Reproduktif (G1)';
+            } elseif ($age > 85 && $age <= $harvestDays) {
+                return 'Pematangan (G2)';
+            } else {
+                return 'Panen';
+            }
         } else {
-            return 'Panen';
+            // Logika fase untuk tanaman lain bisa diatur di sini
+            return 'Fase tidak dikenali';
         }
     }
 
     // Method untuk menghitung waktu menuju panen
     public function timetoHarvest()
     {
-        return 120 - $this->age();
+        // Ambil data hari panen dari relasi plantType
+        $harvestDays = $this->plantType->pt_day_harvest;
+        return max(0, $harvestDays - $this->age());
     }
 }
+
