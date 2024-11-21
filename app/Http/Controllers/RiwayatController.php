@@ -22,8 +22,8 @@ class RiwayatController extends Controller
         }
 
         try {
-            $startDateTime = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $startDate);
-            $endDateTime = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $endDate);
+            $startDateTime = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $startDate);
+            $endDateTime = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $endDate);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Format tanggal tidak valid.'], 400);
         }
