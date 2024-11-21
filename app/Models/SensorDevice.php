@@ -6,26 +6,38 @@ use Illuminate\Database\Eloquent\Model;
 
 class SensorDevice extends Model
 {
-  
-    protected $table = 'tr_unit';
-    protected $primaryKey = 'unit_id';
+    protected $table = 'td_device_sensor';
+    protected $primaryKey = 'ds_id';
+    protected $keyType = 'string';
+
     public $timestamps = false; 
 
     protected $fillable = [
+        'ds_id',
+        'dev_id',
         'unit_id',
-        'unit_name',
-        'unit_name_idn',
-        'unit_symbol',
-        'unit_sts',
-        'unit_update',
-        'area',
-        'active',
-        'min_norm_value',
-        'max_norm_value',
+        'dc_normal_value',
+        'ds_min_norm_value',
+        'ds_max_norm_value',
+        'ds_min_value',
+        'ds_max_value',
+        'ds_min_val_warn',
+        'ds_max_val_warn',
+        'ds_name',
+        'ds_address',
+        'ds_seq',
+        'ds_sts',
+        'ds_update'
     ];
 
-    public function device()
+    protected static function booted()
     {
-        return $this->belongsTo(Device::class, 'dev_id', 'dev_id');
+        static::creating(function ($sensor) {
+            $sensor->ds_update = now();
+        });
+
+        static::updating(function ($sensor) {
+            $sensor->ds_update = now();
+        });
     }
 }

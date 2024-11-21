@@ -14,67 +14,42 @@ class SensorController extends Controller
     }
 
     public function show($id)
-    {
-        $sensor = SensorDevice::find($id);
-        if (!$sensor) {
-            return response()->json(['message' => 'Sensor device tidak ditemukan'], 404);
-        }
-        return response()->json($sensor);
-    }
+{
+    $sensor = SensorDevice::findOrFail($id);
+    return response()->json($sensor);
+}
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'unit_id' => 'required|string|max:32',
-            'unit_name' => 'required|string|max:64',
-            'unit_name_idn' => 'nullable|string|max:32',
-            'unit_symbol' => 'nullable|string|max:4',
-            'unit_sts' => 'nullable|integer|digits_between:0,1',
-            'unit_update' => 'nullable|date',
-            'area' => 'nullable|string|max:32',
-            'active' => 'nullable|string|max:8',
-            'min_norm_value' => 'nullable|string|max:64',
-            'max_norm_value' => 'nullable|string|max:64',
-        ]);
+public function update(Request $request, $id)
+{
+    $request->validate([
+        'ds_id' => 'required|string|max:32',
+        'dev_id' => 'required|string|max:32',
+        'unit_id' => 'nullable|string|max:32',
+        'dc_normal_value' => 'nullable|numeric',
+        'ds_min_norm_value' => 'nullable|numeric',
+        'ds_max_norm_value' => 'nullable|numeric',
+        'ds_min_value' => 'nullable|numeric',
+        'ds_max_value' => 'nullable|numeric',
+        'ds_min_val_warn' => 'nullable|numeric',
+        'ds_max_val_warn' => 'nullable|numeric',
+        'ds_name' => 'nullable|string|max:128',
+        'ds_address' => 'nullable|string|max:32',
+        'ds_seq' => 'nullable|integer',
+        'ds_sts' => 'nullable|integer',
+        'ds_update' => 'nullable|date',
+    ]);
 
-        $sensor = SensorDevice::create($request->all());
+    $sensor = SensorDevice::findOrFail($id);
+    $sensor->update($request->all());
 
-        return response()->json($sensor, 201);
-    }
+    return response()->json($sensor);
+}
 
-    public function update(Request $request, $id)
-    {
-        $sensor = SensorDevice::find($id);
-        if (!$sensor) {
-            return response()->json(['message' => 'Sensor device tidak ditemukan'], 404);
-        }
+public function destroy($id)
+{
+    $sensor = SensorDevice::findOrFail($id);
+    $sensor->delete();
 
-        $request->validate([
-            'unit_id' => 'required|string|max:32',
-            'unit_name' => 'required|string|max:64',
-            'unit_name_idn' => 'nullable|string|max:32',
-            'unit_symbol' => 'nullable|string|max:4',
-            'unit_sts' => 'nullable|integer|digits_between:0,1',
-            'unit_update' => 'nullable|date',
-            'area' => 'nullable|string|max:32',
-            'active' => 'nullable|string|max:8',
-            'min_norm_value' => 'nullable|string|max:64',
-            'max_norm_value' => 'nullable|string|max:64',
-        ]);
-
-        $sensor->update($request->all());
-
-        return response()->json($sensor);
-    }
-
-    public function destroy($id)
-    {
-        $sensor = SensorDevice::find($id);
-        if (!$sensor) {
-            return response()->json(['message' => 'Sensor device tidak ditemukan'], 404);
-        }
-
-        $sensor->delete();
-        return response()->json(['message' => 'Sensor device berhasil dihapus']);
-    }
+    return response()->json(['message' => 'Sensor device berhasil dihapus'], 200);
+}
 }
