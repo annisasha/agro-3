@@ -10,7 +10,7 @@ class SensorDevice extends Model
     protected $primaryKey = 'ds_id';
     protected $keyType = 'string';
 
-    public $timestamps = false; 
+    public $timestamps = false;
 
     protected $fillable = [
         'ds_id',
@@ -39,5 +39,10 @@ class SensorDevice extends Model
         static::updating(function ($sensor) {
             $sensor->ds_update = now();
         });
+    }
+
+    public function device()
+    {
+        return $this->belongsTo(Device::class, 'dev_id', 'dev_id');
     }
 }
