@@ -31,6 +31,8 @@ class DashboardController extends Controller
         $rainData = $this->getRain($devIds);
 
         $plants = Plant::whereIn('dev_id', $devIds)->get()->map(function ($plant) {
+            $commodityVariety = $plant->getCommodityVariety();
+        
             return [
                 'pl_id' => $plant->pl_id,
                 'pl_name' => $plant->pl_name,
@@ -40,12 +42,14 @@ class DashboardController extends Controller
                 'phase' => $plant->phase(),
                 'timeto_harvest' => $plant->timetoHarvest(),
                 'pt_id' => $plant->pt_id,
+                'commodity' => $commodityVariety['commodity'],
+                'variety' => $commodityVariety['variety']
             ];
         });
-
+        
         if ($plants->isEmpty()) {
             return response()->json(['message' => 'Tidak ada tanaman pada site ini'], 404);
-        }
+        }        
 
         $todos = [];
         foreach ($plants as $plant) {
@@ -55,9 +59,9 @@ class DashboardController extends Controller
                 ->orderBy('hand_day')
                 ->get()
                 ->map(function ($todo) use ($plant) {
-                    // Hitung tanggal kegiatan berdasarkan tanggal tanam
+                    // Menghitung tanggal kegiatan berdasarkan tanggal tanam
                     $plantDate = new \Carbon\Carbon($plant['pl_date_planting']);
-                    $todoDate = $plantDate->addDays($todo->hand_day); // Menambahkan hand_day ke tanggal tanam
+                    $todoDate = $plantDate->addDays($todo->hand_day);
 
                     // Menghitung berapa hari lagi menuju kegiatan
                     $daysRemaining = now()->startOfDay()->diffInDays($todoDate->startOfDay());
