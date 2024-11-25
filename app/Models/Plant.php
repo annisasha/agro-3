@@ -10,8 +10,8 @@ class Plant extends Model
 {
     use HasFactory;
 
-    protected $table = 'tm_plant'; 
-    protected $primaryKey = 'pl_id'; 
+    protected $table = 'tm_plant';
+    protected $primaryKey = 'pl_id';
 
     public function plantType()
     {
@@ -22,8 +22,8 @@ class Plant extends Model
     public function age()
     {
         $plantingDate = strtotime($this->pl_date_planting);
-        $currentDate = time(); 
-        $age = ($currentDate - $plantingDate) / (60 * 60 * 24); 
+        $currentDate = time();
+        $age = ($currentDate - $plantingDate) / (60 * 60 * 24);
         return max(0, floor($age));
     }
 
@@ -60,5 +60,18 @@ class Plant extends Model
         $harvestDays = $this->plantType->pt_day_harvest;
         return max(0, $harvestDays - $this->age());
     }
-}
 
+    public function getCommodityVariety()
+    {
+        // Memisahkan nama tanaman menjadi komoditas dan varietas
+        $parts = explode(' ', $this->pl_name, 2);
+
+        $commodity = $parts[0] ?? null;
+        $variety = $parts[1] ?? null;
+
+        return [
+            'commodity' => $commodity,
+            'variety' => $variety
+        ];
+    }
+}

@@ -6,15 +6,16 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class RiwayatController extends Controller
+class Riwayat2Controller extends Controller
 {
     public function index(Request $request)
     {
-        $siteId = 'SITE001';
+        $siteId = 'SITE001'; 
 
         $selectedSensors = $request->input('sensors', []);
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+        $plantDate = '2024-08-08'; 
 
         if (empty($startDate) || empty($endDate)) {
             return response()->json(['message' => 'Tanggal mulai dan akhir harus diisi.'], 400);
@@ -36,10 +37,13 @@ class RiwayatController extends Controller
         }
 
         $data = DB::table('tm_sensor_read')
-            ->select('ds_id', DB::raw('MIN(read_date) as read_date'), DB::raw('MAX(read_value) as read_value')) // Mengambil data pertama (MIN) per hari dan nilai MAX dari read_value
+            ->select('ds_id', DB::raw('MIN(read_date) as read_date'), DB::raw('MAX(read_value) as read_value'))
             ->whereIn('ds_id', $selectedSensors)
             ->whereBetween('read_date', [$startDate, $endDate])
             ->whereRaw("TIME(read_date) BETWEEN '07:00:00' AND '07:59:59'")
+            // Kondisi untuk mengambil data dari hari ke-1 dengan kelipatan 7
+            ->whereRaw("DATE(read_date) >= DATE_ADD(?, INTERVAL 1 DAY)", [$plantDate])
+            ->whereRaw("MOD(DATEDIFF(DATE(read_date), ?), 7) = 1", [$plantDate])
             ->groupBy(DB::raw('DATE(read_date), ds_id'))
             ->orderBy('read_date', 'ASC')
             ->get();

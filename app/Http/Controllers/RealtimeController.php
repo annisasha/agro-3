@@ -44,10 +44,7 @@ class RealtimeController extends Controller
                 'soil_hum' => $soilhumData,
                 'soil_ph' => $soilphData,
                 'soil_temp' => $soiltempData
-            ],
-            200,
-            [],
-            JSON_PRETTY_PRINT
+            ]
         );
     }
 
@@ -67,6 +64,12 @@ class RealtimeController extends Controller
         return $sensorThresholds;
     }
 
+    public function getSensorName($ds_id)
+    {
+        return DB::table('td_device_sensor')
+            ->where('ds_id', $ds_id)
+            ->value('ds_name');
+    }
 
     // Fungsi untuk mengambil data nitrogen
     public function getNitrogen($devIds)
@@ -77,7 +80,7 @@ class RealtimeController extends Controller
 
         foreach ($sensors as $sensor) {
             $sensorData = DB::table('tm_sensor_read')
-                ->select('ds_id', 'read_value')
+                ->select('ds_id', 'read_value', 'read_date')
                 ->where('ds_id', $sensor)
                 ->whereIn('dev_id', $devIds)
                 ->orderBy('read_date', 'DESC')
@@ -86,42 +89,26 @@ class RealtimeController extends Controller
             $valueStatus = '';
             $actionMessage = '';
             $statusMessage = '';
-            $sensorName = ucwords(str_replace('_', ' ', $sensor));
+            $sensorName = $this->getSensorName($sensor);
 
             if ($sensorData) {
-                $sensorLimits = $this->getSensorThresholds($sensor);
+                $readValue = $sensorData->read_value;
 
-                if ($sensorLimits) {
-                    $minValue = $sensorLimits->ds_min_norm_value;
-                    $maxValue = $sensorLimits->ds_max_norm_value;
-                    $minDanger = $sensorLimits->ds_min_val_warn;
-                    $maxDanger = $sensorLimits->ds_max_val_warn;
-
-                    $readValue = $sensorData->read_value;
-
-                    if ($readValue >= $minValue && $readValue <= $maxValue) {
-                        $valueStatus = 'OK';
-                        $statusMessage = 'Nitrogen dalam kondisi normal';
-                        $actionMessage = '';
-                    } elseif ($readValue < $minDanger) {
-                        $valueStatus = 'Danger';
-                        $statusMessage = 'Tingkat Nitrogen terlalu rendah';
-                        $actionMessage = 'Tambahkan pupuk nitrogen';
-                    } elseif ($readValue > $maxDanger) {
-                        $valueStatus = 'Danger';
-                        $statusMessage = 'Tingkat Nitrogen terlalu tinggi';
-                        $actionMessage = 'Kurangi pemberian pupuk nitrogen dan lakukan irigasi';
-                    } else {
-                        $valueStatus = 'Warning';
-                        $statusMessage = 'Nitrogen mendekati ambang batas';
-                        $actionMessage = 'Periksa kondisi lebih lanjut';
-                    }
+                if ($readValue > 0) {
+                    $valueStatus = 'OK';
+                    $statusMessage = 'Nitrogen dalam kondisi normal';
+                    $actionMessage = '';
+                } elseif ($readValue <= 0) {
+                    $valueStatus = 'Danger';
+                    $statusMessage = 'Nitrogen di bawah ambang batas';
+                    $actionMessage = 'Periksa kondisi lebih lanjut';
                 }
             }
 
             $data[] = [
                 'sensor' => $sensor,
-                'data' => $sensorData,
+                'read_value' => $sensorData->read_value ?? null,
+                'read_date' => $sensorData->read_date ?? null,
                 'value_status' => $valueStatus,
                 'status_message' => $statusMessage,
                 'action_message' => $actionMessage,
@@ -152,42 +139,26 @@ class RealtimeController extends Controller
             $valueStatus = '';
             $actionMessage = '';
             $statusMessage = '';
-            $sensorName = ucwords(str_replace('_', ' ', $sensor));
+            $sensorName = $this->getSensorName($sensor);
 
             if ($sensorData) {
-                $sensorLimits = $this->getSensorThresholds($sensor);
+                $readValue = $sensorData->read_value;
 
-                if ($sensorLimits) {
-                    $minValue = $sensorLimits->ds_min_norm_value;
-                    $maxValue = $sensorLimits->ds_max_norm_value;
-                    $minDanger = $sensorLimits->ds_min_val_warn;
-                    $maxDanger = $sensorLimits->ds_max_val_warn;
-
-                    $readValue = $sensorData->read_value;
-
-                    if ($readValue >= $minValue && $readValue <= $maxValue) {
-                        $valueStatus = 'OK';
-                        $statusMessage = 'Fosfor dalam kondisi normal';
-                        $actionMessage = '';
-                    } elseif ($readValue < $minDanger) {
-                        $valueStatus = 'Danger';
-                        $statusMessage = 'Tingkat Fosfor kurang';
-                        $actionMessage = 'Tambahkan pupuk fosfor (SP-36)';
-                    } elseif ($readValue > $maxDanger) {
-                        $valueStatus = 'Danger';
-                        $statusMessage = 'Fosfor di atas batas';
-                        $actionMessage = 'Kurangi pemberian pupuk fosfor dan tingkatkan irigasi';
-                    } else {
-                        $valueStatus = 'Warning';
-                        $statusMessage = 'Fosfor mendekati ambang batas';
-                        $actionMessage = 'Periksa kondisi lebih lanjut';
-                    }
+                if ($readValue > 0) {
+                    $valueStatus = 'OK';
+                    $statusMessage = 'Fosfor dalam kondisi normal';
+                    $actionMessage = '';
+                } elseif ($readValue <= 0) {
+                    $valueStatus = 'Danger';
+                    $statusMessage = 'Fosfor di bawah ambang batas';
+                    $actionMessage = 'Periksa kondisi lebih lanjut';
                 }
             }
 
             $data[] = [
                 'sensor' => $sensor,
-                'data' => $sensorData,
+                'read_value' => $sensorData->read_value ?? null,
+                'read_date' => $sensorData->read_date ?? null,
                 'value_status' => $valueStatus,
                 'status_message' => $statusMessage,
                 'action_message' => $actionMessage,
@@ -218,42 +189,26 @@ class RealtimeController extends Controller
             $valueStatus = '';
             $actionMessage = '';
             $statusMessage = '';
-            $sensorName = ucwords(str_replace('_', ' ', $sensor));
+            $sensorName = $this->getSensorName($sensor);
 
             if ($sensorData) {
-                $sensorLimits = $this->getSensorThresholds('kalium');
+                $readValue = $sensorData->read_value;
 
-                if ($sensorLimits) {
-                    $minValue = $sensorLimits->ds_min_norm_value;
-                    $maxValue = $sensorLimits->ds_max_norm_value;
-                    $minDanger = $sensorLimits->ds_min_val_warn;
-                    $maxDanger = $sensorLimits->ds_max_val_warn;
-
-                    $readValue = $sensorData->read_value;
-
-                    if ($readValue >= $minValue && $readValue <= $maxValue) {
-                        $valueStatus = 'OK';
-                        $statusMessage = 'Kalium dalam kondisi normal';
-                        $actionMessage = '';
-                    } elseif ($readValue < $minDanger) {
-                        $valueStatus = 'Danger';
-                        $statusMessage = 'Tingkat Kalium terlalu rendah';
-                        $actionMessage = 'Tambahkan pupuk kalium (KCl)';
-                    } elseif ($readValue > $maxDanger) {
-                        $valueStatus = 'Danger';
-                        $statusMessage = 'Kalium terlalu tinggi';
-                        $actionMessage = 'Kurangi pemberian pupuk kalium dan lakukan irigasi';
-                    } else {
-                        $valueStatus = 'Warning';
-                        $statusMessage = 'Kalium mendekati ambang batas';
-                        $actionMessage = 'Periksa kondisi lebih lanjut';
-                    }
+                if ($readValue > 0) {
+                    $valueStatus = 'OK';
+                    $statusMessage = 'Kalium dalam kondisi normal';
+                    $actionMessage = '';
+                } elseif ($readValue <= 0) {
+                    $valueStatus = 'Danger';
+                    $statusMessage = 'Kalium di bawah ambang batas';
+                    $actionMessage = 'Periksa kondisi lebih lanjut';
                 }
             }
 
             $data[] = [
                 'sensor' => $sensor,
-                'data' => $sensorData,
+                'read_value' => $sensorData->read_value ?? null,
+                'read_date' => $sensorData->read_date ?? null,
                 'value_status' => $valueStatus,
                 'status_message' => $statusMessage,
                 'action_message' => $actionMessage,
@@ -281,13 +236,17 @@ class RealtimeController extends Controller
                 ->orderBy('read_date', 'DESC')
                 ->first();
 
+            $sensorName = $this->getSensorName($sensor);
+
             if ($sensorData) {
                 $data[] = $sensorData;
             }
         }
 
         return [
-            'data' => $data
+            'read_value' => $sensorData->read_value ?? null,
+            'read_date' => $sensorData->read_date ?? null,
+            'sensor_name' => $sensorName
         ];
     }
 
@@ -308,13 +267,17 @@ class RealtimeController extends Controller
                 ->orderBy('read_date', 'DESC')
                 ->first();
 
+            $sensorName = $this->getSensorName($sensor);
+
             if ($sensorData) {
                 $data[] = $sensorData;
             }
         }
 
         return [
-            'data' => $data
+            'read_value' => $sensorData->read_value ?? null,
+            'read_date' => $sensorData->read_date ?? null,
+            'sensor_name' => $sensorName
         ];
     }
 
@@ -334,13 +297,17 @@ class RealtimeController extends Controller
                 ->orderBy('read_date', 'DESC')
                 ->first();
 
+            $sensorName = $this->getSensorName($sensor);
+
             if ($sensorData) {
                 $data[] = $sensorData;
             }
         }
 
         return [
-            'data' => $data
+            'read_value' => $sensorData->read_value ?? null,
+            'read_date' => $sensorData->read_date ?? null,
+            'sensor_name' => $sensorName
         ];
     }
 
@@ -370,7 +337,7 @@ class RealtimeController extends Controller
             $valueStatus = '';
             $actionMessage = '';
             $statusMessage = '';
-            $sensorName = ucwords(str_replace('_', ' ', $sensor));
+            $sensorName = $this->getSensorName($sensor);
 
             if ($sensorData) {
                 $sensorData->read_value = $sensorData->read_value / 10;
@@ -396,7 +363,8 @@ class RealtimeController extends Controller
 
                 $data[] = [
                     'sensor' => $sensor,
-                    'data' => $sensorData,
+                    'read_value' => $sensorData->read_value ?? null,
+                    'read_date' => $sensorData->read_date ?? null,
                     'value_status' => $valueStatus,
                     'status_message' => $statusMessage,
                     'action_message' => $actionMessage,
@@ -418,53 +386,40 @@ class RealtimeController extends Controller
 
         foreach ($sensors as $sensor) {
             $sensorData = DB::table('tm_sensor_read')
-                ->select('ds_id', 'read_value')
+                ->select('ds_id', 'read_value', 'read_date')
                 ->where('ds_id', $sensor)
                 ->whereIn('dev_id', $devIds)
                 ->orderBy('read_date', 'DESC')
                 ->first();
 
-            $sensorLimits = $this->getSensorThresholds($sensor);
-
-            $minValue = $sensorLimits->ds_min_norm_value;
-            $maxValue = $sensorLimits->ds_max_norm_value;
-            $minDanger = $sensorLimits->ds_min_val_warn;
-            $maxDanger = $sensorLimits->ds_max_val_warn;
-
             $valueStatus = '';
             $actionMessage = '';
             $statusMessage = '';
-            $sensorName = ucwords(str_replace('_', ' ', $sensor));
+            $sensorName = $this->getSensorName($sensor);
 
             if ($sensorData) {
                 $readValue = $sensorData->read_value;
 
-                if ($readValue >= $minValue && $readValue <= $maxValue) {
+                if ($readValue > 0) {
                     $valueStatus = 'OK';
                     $statusMessage = 'Suhu tanah dalam kondisi normal';
-                } elseif ($readValue < $minDanger) {
+                    $actionMessage = '';
+                } elseif ($readValue <= 0) {
                     $valueStatus = 'Danger';
-                    $statusMessage = 'Suhu tanah di bawah batas';
-                    $actionMessage = 'Tingkatkan eksposur sinar matahari dan kurangi irigasi malam hari';
-                } elseif ($readValue > $maxDanger) {
-                    $valueStatus = 'Danger';
-                    $statusMessage = 'Suhu tanah di atas batas';
-                    $actionMessage = 'Gunakan mulsa dan lakukan irigasi lebih sering';
-                } else {
-                    $valueStatus = 'Warning';
-                    $statusMessage = 'Tingkat suhu tanah mendekati ambang batas';
+                    $statusMessage = 'Suhu tanah di bawah ambang batas';
                     $actionMessage = 'Periksa kondisi lebih lanjut';
                 }
-
-                $data[] = [
-                    'sensor' => $sensor,
-                    'data' => $sensorData,
-                    'value_status' => $valueStatus,
-                    'status_message' => $statusMessage,
-                    'action_message' => $actionMessage,
-                    'sensor_name' => $sensorName
-                ];
             }
+
+            $data[] = [
+                'sensor' => $sensor,
+                'read_value' => $sensorData->read_value ?? null,
+                'read_date' => $sensorData->read_date ?? null,
+                'value_status' => $valueStatus,
+                'status_message' => $statusMessage,
+                'action_message' => $actionMessage,
+                'sensor_name' => $sensorName
+            ];
         }
 
         return $data;
