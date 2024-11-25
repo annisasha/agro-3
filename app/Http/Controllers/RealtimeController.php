@@ -56,7 +56,7 @@ class RealtimeController extends Controller
     {
         $sensorThresholds = DB::table('td_device_sensor')
             ->where('ds_id', $ds_id)
-            ->select('ds_min_value', 'ds_max_value', 'ds_min_val_warn', 'ds_max_val_warn')
+            ->select('ds_min_norm_value', 'ds_max_norm_value', 'ds_min_val_warn', 'ds_max_val_warn')
             ->first();
 
         if (!$sensorThresholds) {
@@ -92,8 +92,8 @@ class RealtimeController extends Controller
                 $sensorLimits = $this->getSensorThresholds($sensor);
 
                 if ($sensorLimits) {
-                    $minValue = $sensorLimits->ds_min_value;
-                    $maxValue = $sensorLimits->ds_max_value;
+                    $minValue = $sensorLimits->ds_min_norm_value;
+                    $maxValue = $sensorLimits->ds_max_norm_value;
                     $minDanger = $sensorLimits->ds_min_val_warn;
                     $maxDanger = $sensorLimits->ds_max_val_warn;
 
@@ -158,8 +158,8 @@ class RealtimeController extends Controller
                 $sensorLimits = $this->getSensorThresholds($sensor);
 
                 if ($sensorLimits) {
-                    $minValue = $sensorLimits->ds_min_value;
-                    $maxValue = $sensorLimits->ds_max_value;
+                    $minValue = $sensorLimits->ds_min_norm_value;
+                    $maxValue = $sensorLimits->ds_max_norm_value;
                     $minDanger = $sensorLimits->ds_min_val_warn;
                     $maxDanger = $sensorLimits->ds_max_val_warn;
 
@@ -224,8 +224,8 @@ class RealtimeController extends Controller
                 $sensorLimits = $this->getSensorThresholds('kalium');
 
                 if ($sensorLimits) {
-                    $minValue = $sensorLimits->ds_min_value;
-                    $maxValue = $sensorLimits->ds_max_value;
+                    $minValue = $sensorLimits->ds_min_norm_value;
+                    $maxValue = $sensorLimits->ds_max_norm_value;
                     $minDanger = $sensorLimits->ds_min_val_warn;
                     $maxDanger = $sensorLimits->ds_max_val_warn;
 
@@ -362,8 +362,8 @@ class RealtimeController extends Controller
 
             $sensorLimits = $this->getSensorThresholds($sensor);
 
-            $minValue = $sensorLimits->ds_min_value / 10;
-            $maxValue = $sensorLimits->ds_max_value / 10;
+            $minValue = $sensorLimits->ds_min_norm_value / 10;
+            $maxValue = $sensorLimits->ds_max_norm_value / 10;
             $minDanger = $sensorLimits->ds_min_val_warn / 10;
             $maxDanger = $sensorLimits->ds_max_val_warn / 10;
 
@@ -426,8 +426,8 @@ class RealtimeController extends Controller
 
             $sensorLimits = $this->getSensorThresholds($sensor);
 
-            $minValue = $sensorLimits->ds_min_value;
-            $maxValue = $sensorLimits->ds_max_value;
+            $minValue = $sensorLimits->ds_min_norm_value;
+            $maxValue = $sensorLimits->ds_max_norm_value;
             $minDanger = $sensorLimits->ds_min_val_warn;
             $maxDanger = $sensorLimits->ds_max_val_warn;
 
