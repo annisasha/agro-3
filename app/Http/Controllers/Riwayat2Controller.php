@@ -10,7 +10,7 @@ class Riwayat2Controller extends Controller
 {
     public function index(Request $request)
     {
-        $siteId = 'SITE001'; 
+        $siteId = $request->input('site_id'); 
 
         $selectedSensors = $request->input('sensors', []);
         $startDate = $request->input('start_date');
