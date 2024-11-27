@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 class Plant extends Model
 {
@@ -18,7 +17,7 @@ class Plant extends Model
         return $this->belongsTo(PlantType::class, 'pt_id', 'pt_id');
     }
 
-    // Method untuk menghitung umur tanaman
+    // Untuk menghitung umur tanaman
     public function age()
     {
         $plantingDate = strtotime($this->pl_date_planting);
@@ -27,7 +26,7 @@ class Plant extends Model
         return max(0, floor($age));
     }
 
-    // Method untuk menentukan fase tanaman
+    //  Untuk menentukan fase tanaman
     public function phase()
     {
         // Ambil data hari panen dari relasi plantType
@@ -48,15 +47,14 @@ class Plant extends Model
                 return 'Panen';
             }
         } else {
-            // Logika fase untuk tanaman lain bisa diatur di sini
             return 'Fase tidak dikenali';
         }
     }
 
-    // Method untuk menghitung waktu menuju panen
+    // Untuk menghitung waktu menuju panen
     public function timetoHarvest()
     {
-        // Ambil data hari panen dari relasi plantType
+        // Ambil data pt_day_harvest dari relasi plantType
         $harvestDays = $this->plantType->pt_day_harvest;
         return max(0, $harvestDays - $this->age());
     }

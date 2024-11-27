@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 
 class TanamanController extends Controller
 {
+
+    # Untuk edit informasi tanaman
     public function update(Request $request, $pl_id)
     {
         $validated = $request->validate([
