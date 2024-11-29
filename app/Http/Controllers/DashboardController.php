@@ -155,7 +155,7 @@ class DashboardController extends Controller
                 $statusMessage = 'Suhu dalam kondisi normal';
             } elseif ($readValue < $minValue) {
                 $valueStatus = 'Danger';
-                $statusMessage = 'Suhu terlalu tinggi';
+                $statusMessage = 'Suhu terlalu rendah';
                 $actionMessage = 'Kurangi penyiraman malam hari untuk menghindari penurunan suhu';
             } elseif ($readValue > $maxValue) {
                 $valueStatus = 'Danger';
