@@ -8,8 +8,9 @@ use App\Http\Controllers\RiwayatController;
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\SensorController;
 use App\Http\Controllers\RegisterController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Riwayat2Controller;
+use App\Http\Controllers\TanamanController;
 
 Route::get('dashboard', [DashboardController::class, 'index']);
 Route::get('realtime', [RealtimeController::class, 'index']);
@@ -29,9 +30,11 @@ Route::post('/sensor', [SensorController::class, 'store']);
 Route::put('/sensor/{id}', [SensorController::class, 'update']);  
 Route::delete('/sensor/{id}', [SensorController::class, 'destroy']); 
 
+Route::put('/tanaman/{pl_id}', [TanamanController::class, 'update']);
 
-Route::post('/login', [UserController::class, 'login']);
-Route::post('/logout', [UserController::class, 'logout']);
 
+Route::post('/login', [AuthController::class, 'login']);
+Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
+Route::middleware('auth:sanctum')->get('/profile', [AuthController::class, 'show']);
 
 Route::post('/register', [RegisterController::class, 'register']);

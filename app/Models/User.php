@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use HasApiTokens, Notifiable;
 
     protected $table = 'tm_user'; 
     protected $primaryKey = 'user_id'; 
@@ -28,7 +29,6 @@ class User extends Authenticatable
         'user_pass', 
     ];
 
- 
     public function setPasswordAttribute($value)
     {
         $this->attributes['user_pass'] = bcrypt($value);
