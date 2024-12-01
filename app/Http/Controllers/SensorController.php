@@ -39,6 +39,8 @@ class SensorController extends Controller
             'ds_max_value' => 'nullable|numeric',
             'ds_min_val_warn' => 'nullable|numeric',
             'ds_max_val_warn' => 'nullable|numeric',
+            'min_danger_action' => 'nullable|string|max:300',
+            'max_danger_action' => 'nullable|string|max:300',
             'ds_name' => 'nullable|string|max:128',
             'ds_address' => 'nullable|string|max:32',
             'ds_seq' => 'nullable|integer',

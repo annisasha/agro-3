@@ -119,11 +119,11 @@ private function getSensorData($devIds, $sensors, $sensorType, $valueModifier = 
                 $statusMessage = "$sensorType dalam kondisi normal";
             } elseif ($readValue < $minValue) {
                 $valueStatus = 'Danger';
-                $statusMessage = "$sensorType terlalu rendah";
+                $statusMessage = "$sensorType di bawah batas normal";
                 $actionMessage = $minDangerAct;
             } elseif ($readValue > $maxValue) {
                 $valueStatus = 'Danger';
-                $statusMessage = "$sensorType terlalu tinggi";
+                $statusMessage = "$sensorType di atas batas normal";
                 $actionMessage = $maxDangerAct;
             } else {
                 $valueStatus = 'Warning';
@@ -173,7 +173,7 @@ public function getTDS($devIds)
 public function getEC($devIds)
 {
     $sensors = ['soil_con1', 'soil_con2', 'soil_con3', 'soil_con5', 'soil_con6'];
-    return $this->getSensorData($devIds, $sensors, 'EC');
+    return $this->getSensorData($devIds, $sensors, 'EC', 0.01);
 }
 
 public function getSoilHum($devIds)
@@ -189,7 +189,7 @@ public function getSoilPh($devIds)
 }
 public function getSoilTemp($devIds)
 {
-    $sensors = ['soil_temp', 'soil_temp1', 'soil_temp2', 'soil_temp3', 'soil_temp5', 'soil_temp6'];
+    $sensors = ['soil_temp1', 'soil_temp2', 'soil_temp3', 'soil_temp5', 'soil_temp6'];
     return $this->getSensorData($devIds, $sensors, 'Suhu tanah');
 }
 }

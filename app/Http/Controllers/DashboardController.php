@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Plant;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -118,249 +119,124 @@ class DashboardController extends Controller
         return $latestReadDate ? \Carbon\Carbon::parse($latestReadDate)->format('d-m-Y H:i') : null;
     }
 
-
+    
     // Fungsi untuk mengambil batas atas batas bawah dari sensor
     private function getSensorThresholds($ds_id)
     {
+        $sensorThresholds = DB::table('td_device_sensors')
+            ->where('ds_id', $ds_id)
+            ->select('ds_min_norm_value', 'ds_max_norm_value', 'min_danger_action', 'max_danger_action')
+            ->first();
+
+        if (!$sensorThresholds) {
+            Log::error("No thresholds found for sensor ID: $ds_id");
+            return null;
+        }
+
+        return $sensorThresholds;
+    }
+
+    public function getSensorName($ds_id)
+    {
         return DB::table('td_device_sensors')
             ->where('ds_id', $ds_id)
-            ->select('ds_min_norm_value', 'ds_max_norm_value')
-            ->first();
+            ->value('ds_name');
     }
 
+private function getSensorData($devIds, $sensors, $sensorType, $valueModifier = 1)
+{
 
-    // Fungsi untuk mengambil data suhu
-    public function getTemperature($devIds)
-    {
-        $sensorLimits = $this->getSensorThresholds('temp');
+    $data = [];
 
-        $minValue = $sensorLimits->ds_min_norm_value;
-        $maxValue = $sensorLimits->ds_max_norm_value;
-
-        $data = DB::table('tm_sensor_read')
-            ->select('read_value')
-            ->where('ds_id', 'temp')
+    foreach ($sensors as $sensor) {
+        $sensorData = DB::table('tm_sensor_read')
+            ->select('ds_id', 'read_value', 'read_date')
+            ->where('ds_id', $sensor)
             ->whereIn('dev_id', $devIds)
             ->orderBy('read_date', 'DESC')
             ->first();
 
+        $sensorLimits = $this->getSensorThresholds($sensor);
+
+        if (!$sensorLimits) {
+            Log::warning("No thresholds found for sensor: $sensor");
+            continue;
+        }
+
+        $minValue = $sensorLimits->ds_min_norm_value * $valueModifier;
+        $maxValue = $sensorLimits->ds_max_norm_value * $valueModifier;
+        $minDangerAct = $sensorLimits->min_danger_action;
+        $maxDangerAct = $sensorLimits->max_danger_action;
+
         $valueStatus = '';
         $actionMessage = '';
         $statusMessage = '';
+        $sensorName = $this->getSensorName($sensor);
 
-        if ($data) {
-            $readValue = $data->read_value;
+        if ($sensorData) {
+            $readValue = $sensorData->read_value * $valueModifier;
+
             if ($readValue >= $minValue && $readValue <= $maxValue) {
                 $valueStatus = 'OK';
-                $statusMessage = 'Suhu dalam kondisi normal';
+                $statusMessage = "$sensorType dalam kondisi normal";
             } elseif ($readValue < $minValue) {
                 $valueStatus = 'Danger';
-                $statusMessage = 'Suhu terlalu rendah';
-                $actionMessage = 'Kurangi penyiraman malam hari untuk menghindari penurunan suhu';
+                $statusMessage = "$sensorType di bawah batas normal";
+                $actionMessage = $minDangerAct;
             } elseif ($readValue > $maxValue) {
                 $valueStatus = 'Danger';
-                $statusMessage = 'Suhu terlalu tinggi';
-                $actionMessage = 'Atur pengairan untuk mengurangi efek panas';
+                $statusMessage = "$sensorType di atas batas normal";
+                $actionMessage = $maxDangerAct;
             } else {
                 $valueStatus = 'Warning';
-                $statusMessage = 'Suhu mendekati ambang batas';
-                $actionMessage = 'Periksa kondisi lebih lanjut';
+                $statusMessage = "$sensorType mendekati ambang batas";
+                $actionMessage = "Periksa kondisi lebih lanjut untuk $sensorType.";
             }
-        }
 
-        return [
-            'data' => $data,
-            'value_status' => $valueStatus,
-            'status_message' => $statusMessage,
-            'action_message' => $actionMessage
-        ];
+            $readValue = $sensorData->read_value * $valueModifier;
+
+            $data[] = [
+                'sensor' => $sensor,
+                'read_value' => $readValue,
+                'read_date' => $sensorData->read_date ?? null,
+                'value_status' => $valueStatus,
+                'status_message' => $statusMessage,
+                'action_message' => $actionMessage,
+                'sensor_name' => $sensorName
+            ];
+        }
     }
 
+    return $data;
+}
 
-    // Fungsi untuk mengambil data kelembapan
-    public function getHumidity($devIds)
-    {
-        $sensorLimits = $this->getSensorThresholds('hum');
+public function getTemperature($devIds)
+{
+    $sensors = ['temp'];
+    return $this->getSensorData($devIds, $sensors, 'Suhu Lingkungan');
+}
 
-        $minValue = $sensorLimits->ds_min_norm_value;
-        $maxValue = $sensorLimits->ds_max_norm_value;
+public function getHumidity($devIds)
+{
+    $sensors = ['hum'];
+    return $this->getSensorData($devIds, $sensors, 'Kelembapan Lingkungan');
+}
 
-        $data = DB::table('tm_sensor_read')
-            ->select('read_value')
-            ->where('ds_id', 'hum')
-            ->whereIn('dev_id', $devIds)
-            ->orderBy('read_date', 'DESC')
-            ->first();
+public function getWind($devIds)
+{
+    $sensors = ['wind'];
+    return $this->getSensorData($devIds, $sensors, 'Kecepatan Angin');
+}
 
-        $valueStatus = '';
-        $actionMessage = '';
-        $statusMessage = '';
+public function getLux($devIds)
+{
+    $sensors = ['ilum'];
+    return $this->getSensorData($devIds, $sensors, 'Intensitas Cahaya', 100);
+}
 
-        if ($data) {
-            $readValue = $data->read_value;
-            if ($readValue >= $minValue && $readValue <= $maxValue) {
-                $valueStatus = 'OK';
-                $statusMessage = 'Kelembapan dalam kondisi normal';
-            } elseif ($readValue < $minValue) {
-                $valueStatus = 'Danger';
-                $statusMessage = 'Kelembapan terlalu rendah';
-                $actionMessage = 'Tambahkan pengairan lebih intensif';
-            } elseif ($readValue > $maxValue) {
-                $valueStatus = 'Danger';
-                $statusMessage = 'Kelembapan terlalu tinggi';
-                $actionMessage = 'Kurangi pengairan, untuk mencegah kelembapan berlebihan';
-            } else {
-                $valueStatus = 'Warning';
-                $statusMessage = 'Kelembapan mendekati ambang batas';
-                $actionMessage = 'Periksa kondisi lebih lanjut';
-            }
-        }
-
-        return [
-            'data' => $data,
-            'value_status' => $valueStatus,
-            'status_message' => $statusMessage,
-            'action_message' => $actionMessage
-        ];
-    }
-
-
-
-    // Fungsi untuk mengambil data kecepatan angin
-    public function getWind($devIds)
-    {
-        $sensorLimits = $this->getSensorThresholds('wind');
-
-        $minValue = $sensorLimits->ds_min_norm_value;
-        $maxValue = $sensorLimits->ds_max_norm_value;
-
-
-        $data = DB::table('tm_sensor_read')
-            ->select('read_value')
-            ->where('ds_id', 'wind')
-            ->whereIn('dev_id', $devIds)
-            ->orderBy('read_date', 'DESC')
-            ->first();
-
-        $valueStatus = '';
-        $actionMessage = '';
-        $statusMessage = '';
-
-        if ($data) {
-            $readValue = $data->read_value;
-            if ($readValue >= $minValue && $readValue <= $maxValue) {
-                $valueStatus = 'OK';
-                $statusMessage = 'Kecepatan angin dalam kondisi normal';
-            } elseif ($readValue > $minValue) {
-                $valueStatus = 'Danger';
-                $statusMessage = 'Angin terlalu kencang';
-                $actionMessage = 'Gunakan penahan angin seperti pagar tanaman';
-            }
-        }
-
-        return [
-            'data' => $data,
-            'value_status' => $valueStatus,
-            'status_message' => $statusMessage,
-            'action_message' => $actionMessage
-        ];
-    }
-
-
-
-    // Fungsi untuk mengambil data kecerahan
-    public function getLux($devIds)
-    {
-        $sensorLimits = $this->getSensorThresholds('ilum');
-
-        $minValue = $sensorLimits->ds_min_norm_value;
-        $maxValue = $sensorLimits->ds_max_norm_value;
-
-        $data = DB::table('tm_sensor_read')
-            ->select('read_value')
-            ->where('ds_id', 'ilum')
-            ->whereIn('dev_id', $devIds)
-            ->orderBy('read_date', 'DESC')
-            ->first();
-
-        $valueStatus = '';
-        $actionMessage = '';
-        $statusMessage = '';
-
-        if ($data) {
-            $readValue = $data->read_value;
-            if ($readValue >= $minValue && $readValue <= $maxValue) {
-                $valueStatus = 'OK';
-                $statusMessage = 'Intensitas cahaya dalam kondisi normal';
-            } elseif ($readValue < $minValue) {
-                $valueStatus = 'Danger';
-                $statusMessage = 'Intensitas cahaya terlalu rendah';
-                $actionMessage = 'Pastikan tanaman menerima pencahayaan yang cukup, atau gunakan lampu tambahan jika diperlukan';
-            } elseif ($readValue > $maxValue) {
-                $valueStatus = 'Danger';
-                $statusMessage = 'Intensitas cahaya terlalu tinggi';
-                $actionMessage = 'Gunakan jaring peneduh untuk melindungi tanaman dari sinar matahari langsung';
-            } else {
-                $valueStatus = 'Warning';
-                $statusMessage = 'Intensitas cahaya mendekati ambang batas';
-                $actionMessage = 'Periksa kondisi lebih lanjut';
-            }
-        }
-
-        return [
-            'data' => $data,
-            'value_status' => $valueStatus,
-            'status_message' => $statusMessage,
-            'action_message' => $actionMessage
-        ];
-    }
-
-
-
-    // Fungsi untuk mengambil data curah hujan
-    public function getRain($devIds)
-    {
-        $sensorLimits = $this->getSensorThresholds('rain');
-
-        $minValue = $sensorLimits->ds_min_norm_value;
-        $maxValue = $sensorLimits->ds_max_norm_value;
-
-        $data = DB::table('tm_sensor_read')
-            ->select('read_value')
-            ->where('ds_id', 'rain')
-            ->whereIn('dev_id', $devIds)
-            ->orderBy('read_date', 'DESC')
-            ->first();
-
-        $valueStatus = '';
-        $actionMessage = '';
-        $statusMessage = '';
-
-        if ($data) {
-            $readValue = $data->read_value;
-            if ($readValue >= $minValue && $readValue <= $maxValue) {
-                $valueStatus = 'OK';
-                $statusMessage = 'Curah hujan dalam kondisi normal';
-            } elseif ($readValue < $minValue) {
-                $valueStatus = 'Danger';
-                $statusMessage = 'Curah hujan terlalu rendah';
-                $actionMessage = 'Lakukan irigasi tambahan untuk memenuhi kebutuhan air tanaman';
-            } elseif ($readValue > $maxValue) {
-                $valueStatus = 'Danger';
-                $statusMessage = 'Curah hujan terlalu tinggi';
-                $actionMessage = 'Gunakan jaring peneduh untuk melindungi tanaman dari sinar matahari langsung';
-            } else {
-                $valueStatus = 'Warning';
-                $statusMessage = 'Perbaiki sistem drainase untuk menghindari genangan air di sawah';
-                $actionMessage = 'Periksa kondisi lebih lanjut';
-            }
-        }
-
-        return [
-            'data' => $data,
-            'value_status' => $valueStatus,
-            'status_message' => $statusMessage,
-            'action_message' => $actionMessage
-        ];
-    }
+public function getRain($devIds)
+{
+    $sensors = ['rain'];
+    return $this->getSensorData($devIds, $sensors, 'Hujan');
+}
 }

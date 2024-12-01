@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class SensorDevice extends Model
 {
-    protected $table = 'td_device_sensor';
+    protected $table = 'td_device_sensors';
     protected $primaryKey = 'ds_id';
     protected $keyType = 'string';
 
@@ -23,6 +23,8 @@ class SensorDevice extends Model
         'ds_max_value',
         'ds_min_val_warn',
         'ds_max_val_warn',
+        'min_danger_action',
+        'max_danger_action',
         'ds_name',
         'ds_address',
         'ds_seq',
