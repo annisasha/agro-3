@@ -29,7 +29,8 @@ class RiwayatController extends Controller
             2 => ['soil_ph2', 'soil_temp2', 'soil_nitro2', 'soil_phos2', 'soil_pot2', 'soil_hum2', 'soil_tds2', 'soil_con2'],
             3 => ['soil_ph3', 'soil_temp3', 'soil_nitro3', 'soil_phos3', 'soil_pot3', 'soil_hum3', 'soil_tds3', 'soil_con3'],
             4 => ['soil_ph5', 'soil_temp5', 'soil_nitro5', 'soil_phos5', 'soil_pot5', 'soil_hum5', 'soil_tds5', 'soil_con5'],
-            5 => ['soil_ph6', 'soil_temp6', 'soil_nitro6', 'soil_phos6', 'soil_pot6', 'soil_hum6', 'soil_tds6', 'soil_con6']
+            5 => ['soil_ph6', 'soil_temp6', 'soil_nitro6', 'soil_phos6', 'soil_pot6', 'soil_hum6', 'soil_tds6', 'soil_con6'],
+            "lingkungan" => ['temp', 'hum', 'ilum', 'wind', 'rain']
         ];
 
         $allowedSensors = [];
@@ -46,6 +47,7 @@ class RiwayatController extends Controller
         $siteSensors = DB::table('td_device_sensor')
             ->join('tm_device', 'tm_device.dev_id', '=', 'td_device_sensor.dev_id')
             ->where('tm_device.site_id', $siteId)
+            ->where('tm_device.dev_id', 'TELU0100')
             ->pluck('td_device_sensor.ds_id')
             ->toArray();
 
