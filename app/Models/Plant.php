@@ -8,13 +8,31 @@ use Illuminate\Database\Eloquent\Model;
 class Plant extends Model
 {
     use HasFactory;
-
     protected $table = 'tm_plant';
     protected $primaryKey = 'pl_id';
+    protected $keyType = 'string';
+    public $timestamps = false;
+    protected $fillable = [
+        'pl_id',
+        'dev_id',
+        'pt_id',
+        'pl_name',
+        'pl_desc',
+        'pl_date_planting',
+        'pl_area',
+        'pl_lat',
+        'pl_lon',
+        'pl_update'
+    ];
 
     public function plantType()
     {
         return $this->belongsTo(PlantType::class, 'pt_id', 'pt_id');
+    }
+
+    public function device()
+    {
+        return $this->belongsTo(Device::class, 'dev_id', 'dev_id');
     }
 
     // Untuk menghitung umur tanaman

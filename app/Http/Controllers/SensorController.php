@@ -26,6 +26,35 @@ class SensorController extends Controller
         return response()->json($sensor);
     }
 
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'ds_id' => 'required|string|max:32',
+            'dev_id' => 'required|string|max:32',
+            'unit_id' => 'nullable|string|max:32',
+            'dc_normal_value' => 'nullable|numeric',
+            'ds_min_norm_value' => 'nullable|numeric',
+            'ds_max_norm_value' => 'nullable|numeric',
+            'ds_min_value' => 'nullable|numeric',
+            'ds_max_value' => 'nullable|numeric',
+            'ds_min_val_warn' => 'nullable|numeric',
+            'ds_max_val_warn' => 'nullable|numeric',
+            'min_danger_action' => 'nullable|string|max:300',
+            'max_danger_action' => 'nullable|string|max:300',
+            'ds_name' => 'nullable|string|max:128',
+            'ds_address' => 'nullable|string|max:32',
+            'ds_seq' => 'nullable|integer',
+            'ds_sts' => 'nullable|integer',
+            'ds_update' => 'nullable|date',
+        ]);
+
+        $sensor = SensorDevice::create($validated);
+
+        return response()->json([$sensor,
+            'message' => 'Sensor device berhasil ditambahkan.'
+        ], 201);
+    }
+
     public function update(Request $request, $id)
     {
         $request->validate([
