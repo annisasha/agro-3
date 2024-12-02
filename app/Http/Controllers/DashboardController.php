@@ -27,9 +27,6 @@ class DashboardController extends Controller
 
         $temperatureData = $this->getTemperature($devIds);
         $humidityData = $this->getHumidity($devIds);
-        $windData = $this->getWind($devIds);
-        $luxData = $this->getLux($devIds);
-        $rainData = $this->getRain($devIds);
 
         $lastUpdated = $this->getLastUpdatedDate($devIds);
 
@@ -56,71 +53,62 @@ class DashboardController extends Controller
 
         $todos = [];
         foreach ($plants as $plant) {
+            $plantAge = $plant['age'];
+            $plantDate = new \Carbon\Carbon($plant['pl_date_planting']);
             $plantTodos = DB::table('tr_plant_handling_copy')
                 ->where('pt_id', $plant['pt_id'])
-                ->where('hand_day', '>=', $plant['age'])
-                ->get()
-                ->map(function ($todo) use ($plant) {
-                    // Menghitung tanggal kegiatan berdasarkan tanggal tanam dan hand_day
-                    $plantDate = new \Carbon\Carbon($plant['pl_date_planting']);
-
-                    // Menghitung tanggal kegiatan sesuai hand_day
+                ->orderBy('hand_day', 'ASC')
+                ->get();
+        
+            $activeTodos = [];
+        
+            foreach ($plantTodos as $todo) {  // Perbaikan di sini
+                $todoStart = $todo->hand_day;
+                $todoEnd = $todoStart + $todo->hand_day_toleran;
+        
+                if ($plantAge >= $todoStart && $plantAge <= $todoEnd) {
                     $todoDate = $plantDate->copy()->addDays($todo->hand_day);
-
-                    // Menghitung tanggal kegiatan dengan toleransi (hand_day + hand_day_toleran)
-                    $tolerantDate = $plantDate->copy()->addDays($todo->hand_day + $todo->hand_day_toleran);
-
-                    // Menghitung sisa hari menuju kegiatan 
-                    $daysRemaining = $todo->hand_day - $plant['age'];
-                    $daysTolerantRemaining = ($todo->hand_day + $todo->hand_day_toleran) - $plant['age'];
-
-                    return [
+                    $tolerantDate = $plantDate->copy()->addDays($todoEnd);
+        
+                    $activeTodos[] = [
                         'hand_title' => $todo->hand_title,
                         'hand_day' => $todo->hand_day,
                         'hand_day_toleran' => $todo->hand_day_toleran,
-                        'fertilizer_type' => $todo->fertilizer_type,
+                        'fertilizer_type' => isset($todo->fertilizer_type) ? $todo->fertilizer_type : 'N/A',
                         'todo_date' => $todoDate->format('d-m-Y'),
                         'tolerant_date' => $tolerantDate->format('d-m-Y'),
-                        'days_remaining' => $daysRemaining,
-                        'days_tolerant_remaining' => $daysTolerantRemaining
+                        'days_remaining' => $todoStart - $plantAge,
+                        'days_tolerant_remaining' => $todoEnd - $plantAge,
                     ];
-                });
-
+                }
+            }
+        
             $todos[] = [
                 'plant_id' => $plant['pl_id'],
-                'todos' => $plantTodos
+                'todos' => $activeTodos
             ];
         }
-
-        return response()->json(
-            [
-                'site_id' => $siteId,
-                'temperature' => $temperatureData,
-                'humidity' => $humidityData,
-                'wind' => $windData,
-                'lux' => $luxData,
-                'rain' => $rainData,
-                'plants' => $plants,
-                'todos' => $todos,
-                'last_updated' => $lastUpdated
-            ],
-            200,
-            [],
-            JSON_PRETTY_PRINT
-        );
-    }
+        
+        return response()->json([
+            'site_id' => $siteId,
+            'temperature' => $temperatureData,
+            'humidity' => $humidityData,
+            'plants' => $plants,  
+            'todos' => $todos,
+            'last_updated' => $lastUpdated  
+        ]);
+    }        
 
     private function getLastUpdatedDate($devIds)
     {
         $latestReadDate = DB::table('tm_sensor_read')
             ->whereIn('dev_id', $devIds)
+            ->where('read_date', '<=', now()->setTimezone('Asia/Jakarta'))
             ->max('read_date');
 
         return $latestReadDate ? \Carbon\Carbon::parse($latestReadDate)->format('d-m-Y H:i') : null;
     }
 
-    
-    // Fungsi untuk mengambil batas atas batas bawah dari sensor
     private function getSensorThresholds($ds_id)
     {
         $sensorThresholds = DB::table('td_device_sensors')
@@ -143,100 +131,82 @@ class DashboardController extends Controller
             ->value('ds_name');
     }
 
-private function getSensorData($devIds, $sensors, $sensorType, $valueModifier = 1)
-{
+    private function getSensorData($devIds, $sensors, $sensorType, $valueModifier = 1)
+    {
+        $data = [];
 
-    $data = [];
+        foreach ($sensors as $sensor) {
+            $sensorData = DB::table('tm_sensor_read')
+                ->select('ds_id', 'read_value', 'read_date')
+                ->where('ds_id', $sensor)
+                ->whereIn('dev_id', $devIds)
+                ->where('read_date', '<=', now()->setTimezone('Asia/Jakarta'))
+                ->orderBy('read_date', 'DESC')
+                ->first();
 
-    foreach ($sensors as $sensor) {
-        $sensorData = DB::table('tm_sensor_read')
-            ->select('ds_id', 'read_value', 'read_date')
-            ->where('ds_id', $sensor)
-            ->whereIn('dev_id', $devIds)
-            ->orderBy('read_date', 'DESC')
-            ->first();
+            $sensorLimits = $this->getSensorThresholds($sensor);
 
-        $sensorLimits = $this->getSensorThresholds($sensor);
-
-        if (!$sensorLimits) {
-            Log::warning("No thresholds found for sensor: $sensor");
-            continue;
-        }
-
-        $minValue = $sensorLimits->ds_min_norm_value * $valueModifier;
-        $maxValue = $sensorLimits->ds_max_norm_value * $valueModifier;
-        $minDangerAct = $sensorLimits->min_danger_action;
-        $maxDangerAct = $sensorLimits->max_danger_action;
-
-        $valueStatus = '';
-        $actionMessage = '';
-        $statusMessage = '';
-        $sensorName = $this->getSensorName($sensor);
-
-        if ($sensorData) {
-            $readValue = $sensorData->read_value * $valueModifier;
-
-            if ($readValue >= $minValue && $readValue <= $maxValue) {
-                $valueStatus = 'OK';
-                $statusMessage = "$sensorType dalam kondisi normal";
-            } elseif ($readValue < $minValue) {
-                $valueStatus = 'Danger';
-                $statusMessage = "$sensorType di bawah batas normal";
-                $actionMessage = $minDangerAct;
-            } elseif ($readValue > $maxValue) {
-                $valueStatus = 'Danger';
-                $statusMessage = "$sensorType di atas batas normal";
-                $actionMessage = $maxDangerAct;
-            } else {
-                $valueStatus = 'Warning';
-                $statusMessage = "$sensorType mendekati ambang batas";
-                $actionMessage = "Periksa kondisi lebih lanjut untuk $sensorType.";
+            if (!$sensorLimits) {
+                Log::warning("No thresholds found for sensor: $sensor");
+                continue;
             }
 
-            $readValue = $sensorData->read_value * $valueModifier;
+            $minValue = $sensorLimits->ds_min_norm_value * $valueModifier;
+            $maxValue = $sensorLimits->ds_max_norm_value * $valueModifier;
+            $minDangerAct = $sensorLimits->min_danger_action;
+            $maxDangerAct = $sensorLimits->max_danger_action;
 
-            $data[] = [
-                'sensor' => $sensor,
-                'read_value' => $readValue,
-                'read_date' => $sensorData->read_date ?? null,
-                'value_status' => $valueStatus,
-                'status_message' => $statusMessage,
-                'action_message' => $actionMessage,
-                'sensor_name' => $sensorName
-            ];
+            $valueStatus = '';
+            $actionMessage = '';
+            $statusMessage = '';
+            $sensorName = $this->getSensorName($sensor);
+
+            if ($sensorData) {
+                $readValue = $sensorData->read_value * $valueModifier;
+
+                if ($readValue >= $minValue && $readValue <= $maxValue) {
+                    $valueStatus = 'OK';
+                    $statusMessage = "$sensorType dalam kondisi normal";
+                } elseif ($readValue < $minValue) {
+                    $valueStatus = 'Danger';
+                    $statusMessage = "$sensorType di bawah batas normal";
+                    $actionMessage = $minDangerAct;
+                } elseif ($readValue > $maxValue) {
+                    $valueStatus = 'Danger';
+                    $statusMessage = "$sensorType di atas batas normal";
+                    $actionMessage = $maxDangerAct;
+                } else {
+                    $valueStatus = 'Warning';
+                    $statusMessage = "$sensorType mendekati ambang batas";
+                    $actionMessage = "Periksa kondisi lebih lanjut untuk $sensorType.";
+                }
+
+                $readValue = $sensorData->read_value * $valueModifier;
+
+                $data[] = [
+                    'sensor' => $sensor,
+                    'read_value' => $readValue,
+                    'read_date' => $sensorData->read_date ?? null,
+                    'value_status' => $valueStatus,
+                    'status_message' => $statusMessage,
+                    'action_message' => $actionMessage,
+                    'sensor_name' => $sensorName
+                ];
+            }
         }
+
+        return $data;
     }
 
-    return $data;
-}
+    public function getTemperature($devIds)
+    {
+        $sensors = ['env_temp'];
+        return $this->getSensorData($devIds, $sensors, 'Suhu Lingkungan');
+    }
 
-public function getTemperature($devIds)
-{
-    $sensors = ['temp'];
-    return $this->getSensorData($devIds, $sensors, 'Suhu Lingkungan');
-}
-
-public function getHumidity($devIds)
-{
-    $sensors = ['hum'];
-    return $this->getSensorData($devIds, $sensors, 'Kelembapan Lingkungan');
-}
-
-public function getWind($devIds)
-{
-    $sensors = ['wind'];
-    return $this->getSensorData($devIds, $sensors, 'Kecepatan Angin');
-}
-
-public function getLux($devIds)
-{
-    $sensors = ['ilum'];
-    return $this->getSensorData($devIds, $sensors, 'Intensitas Cahaya', 100);
-}
-
-public function getRain($devIds)
-{
-    $sensors = ['rain'];
-    return $this->getSensorData($devIds, $sensors, 'Hujan');
-}
+    public function getHumidity($devIds)
+    {
+        $sensors = ['env_hum'];
+        return $this->getSensorData($devIds, $sensors, 'Kelembapan Lingkungan');
+    }
 }

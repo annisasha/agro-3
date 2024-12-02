@@ -7,12 +7,23 @@ use App\Models\Area;
 use App\Models\Site;
 
 class AreaController extends Controller
-{
-    public function index()
+{public function index(Request $request)
     {
-        $areas = Area::with('site')->get();
+        $siteId = $request->input('site_id');
+        
+        if (!$siteId) {
+            return response()->json(['message' => 'site_id tidak ditemukan'], 400);
+        }
+    
+        $areas = Area::with('site')
+            ->whereHas('site', function ($query) use ($siteId) {
+                $query->where('site_id', $siteId);
+            })
+            ->get();
+    
         return response()->json($areas);
     }
+    
 
     public function show($id)
     {

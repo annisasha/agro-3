@@ -25,12 +25,9 @@ class RiwayatController extends Controller
         }
 
         $areaMapping = [
-            1 => ['soil_ph1', 'soil_temp1', 'soil_nitro1', 'soil_phos1', 'soil_pot1', 'soil_hum1', 'soil_tds1', 'soil_con1'],
-            2 => ['soil_ph2', 'soil_temp2', 'soil_nitro2', 'soil_phos2', 'soil_pot2', 'soil_hum2', 'soil_tds2', 'soil_con2'],
-            3 => ['soil_ph3', 'soil_temp3', 'soil_nitro3', 'soil_phos3', 'soil_pot3', 'soil_hum3', 'soil_tds3', 'soil_con3'],
-            4 => ['soil_ph5', 'soil_temp5', 'soil_nitro5', 'soil_phos5', 'soil_pot5', 'soil_hum5', 'soil_tds5', 'soil_con5'],
-            5 => ['soil_ph6', 'soil_temp6', 'soil_nitro6', 'soil_phos6', 'soil_pot6', 'soil_hum6', 'soil_tds6', 'soil_con6'],
-            "lingkungan" => ['temp', 'hum', 'ilum', 'wind', 'rain']
+            1 => ['soil1_ph', 'soil1_temp', 'soil1_nitro', 'soil1_phos', 'soil1_pot', 'soil1_hum', 'soil1_tds', 'soil1_con'],
+            2 => ['soil2_ph', 'soil2_temp', 'soil2_nitro', 'soil2_phos', 'soil2_pot', 'soil2_hum', 'soil2_tds', 'soil2_con'],
+            "lingkungan" => ['env_temp', 'env_hum']
         ];
 
         $allowedSensors = [];
@@ -47,7 +44,7 @@ class RiwayatController extends Controller
         $siteSensors = DB::table('td_device_sensor')
             ->join('tm_device', 'tm_device.dev_id', '=', 'td_device_sensor.dev_id')
             ->where('tm_device.site_id', $siteId)
-            ->where('tm_device.dev_id', 'TELU0100')
+            ->where('tm_device.dev_id', 'TELU0300')
             ->pluck('td_device_sensor.ds_id')
             ->toArray();
 

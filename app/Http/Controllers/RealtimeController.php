@@ -54,6 +54,7 @@ class RealtimeController extends Controller
     {
         $latestReadDate = DB::table('tm_sensor_read')
             ->whereIn('dev_id', $devIds)
+            ->where('read_date', '<=', now()->setTimezone('Asia/Jakarta'))
             ->max('read_date');  
 
         return $latestReadDate ? \Carbon\Carbon::parse($latestReadDate)->format('d-m-Y H:i') : null;
@@ -91,6 +92,7 @@ private function getSensorData($devIds, $sensors, $sensorType, $valueModifier = 
             ->select('ds_id', 'read_value', 'read_date')
             ->where('ds_id', $sensor)
             ->whereIn('dev_id', $devIds)
+            ->where('read_date', '<=', now()->setTimezone('Asia/Jakarta'))
             ->orderBy('read_date', 'DESC')
             ->first();
 
@@ -148,48 +150,48 @@ private function getSensorData($devIds, $sensors, $sensorType, $valueModifier = 
 
 public function getNitrogen($devIds)
 {
-    $sensors = ['soil_nitro1', 'soil_nitro2', 'soil_nitro3', 'soil_nitro5', 'soil_nitro6'];
+    $sensors = ['soil1_nitro', 'soil2_nitro'];
     return $this->getSensorData($devIds, $sensors, 'Nitrogen');
 }
 
 public function getFosfor($devIds)
 {
-    $sensors = ['soil_phos1', 'soil_phos2', 'soil_phos3', 'soil_phos5', 'soil_phos6'];
+    $sensors = ['soil1_phos', 'soil2_phos'];
     return $this->getSensorData($devIds, $sensors, 'Fosfor', 0.1);
 }
 
 public function getKalium($devIds)
 {
-    $sensors = ['soil_pot1', 'soil_pot2', 'soil_pot3', 'soil_pot5', 'soil_pot6'];
+    $sensors = ['soil1_pot', 'soil2_pot'];
     return $this->getSensorData($devIds, $sensors, 'Kalium');
 }
 
 public function getTDS($devIds)
 {
-    $sensors = ['soil_tds1', 'soil_tds2', 'soil_tds3', 'soil_tds5', 'soil_tds6'];
+    $sensors = ['soil1_tds', 'soil2_tds'];
     return $this->getSensorData($devIds, $sensors, 'TDS');
 }
 
 public function getEC($devIds)
 {
-    $sensors = ['soil_con1', 'soil_con2', 'soil_con3', 'soil_con5', 'soil_con6'];
+    $sensors = ['soil1_con', 'soil2_con'];
     return $this->getSensorData($devIds, $sensors, 'EC', 0.01);
 }
 
 public function getSoilHum($devIds)
 {
-    $sensors = ['soil_hum1', 'soil_hum2', 'soil_hum3', 'soil_hum5', 'soil_hum6'];
+    $sensors = ['soil1_hum', 'soil2_hum'];
     return $this->getSensorData($devIds, $sensors, 'Kelembapan tanah');
 }
 
 public function getSoilPh($devIds)
 {
-    $sensors = ['soil_ph1', 'soil_ph2', 'soil_ph3', 'soil_ph5', 'soil_ph6'];
+    $sensors = ['soil1_ph', 'soil2_ph'];
     return $this->getSensorData($devIds, $sensors, 'pH tanah', 0.1);
 }
 public function getSoilTemp($devIds)
 {
-    $sensors = ['soil_temp1', 'soil_temp2', 'soil_temp3', 'soil_temp5', 'soil_temp6'];
+    $sensors = ['soil1_temp', 'soil2_temp'];
     return $this->getSensorData($devIds, $sensors, 'Suhu tanah');
 }
 }
