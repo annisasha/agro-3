@@ -83,7 +83,7 @@ class RealtimeController extends Controller
             ->value('ds_name');
     }
 
-private function getSensorData($devIds, $sensors, $sensorType, $valueModifier = 1)
+private function getSensorData($devIds, $sensors, $sensorType)
 {
     $data = [];
 
@@ -103,8 +103,8 @@ private function getSensorData($devIds, $sensors, $sensorType, $valueModifier = 
             continue;
         }
 
-        $minValue = $sensorLimits->ds_min_norm_value * $valueModifier;
-        $maxValue = $sensorLimits->ds_max_norm_value * $valueModifier;
+        $minValue = $sensorLimits->ds_min_norm_value;
+        $maxValue = $sensorLimits->ds_max_norm_value;
         $minDangerAct = $sensorLimits->min_danger_action;
         $maxDangerAct = $sensorLimits->max_danger_action;
 
@@ -114,7 +114,7 @@ private function getSensorData($devIds, $sensors, $sensorType, $valueModifier = 
         $sensorName = $this->getSensorName($sensor);
 
         if ($sensorData) {
-            $readValue = $sensorData->read_value * $valueModifier;
+            $readValue = $sensorData->read_value;
 
             if ($readValue >= $minValue && $readValue <= $maxValue) {
                 $valueStatus = 'OK';
@@ -157,7 +157,7 @@ public function getNitrogen($devIds)
 public function getFosfor($devIds)
 {
     $sensors = ['soil1_phos', 'soil2_phos'];
-    return $this->getSensorData($devIds, $sensors, 'Fosfor', 0.1);
+    return $this->getSensorData($devIds, $sensors, 'Fosfor');
 }
 
 public function getKalium($devIds)
@@ -175,7 +175,7 @@ public function getTDS($devIds)
 public function getEC($devIds)
 {
     $sensors = ['soil1_con', 'soil2_con'];
-    return $this->getSensorData($devIds, $sensors, 'EC', 0.01);
+    return $this->getSensorData($devIds, $sensors, 'EC');
 }
 
 public function getSoilHum($devIds)
@@ -187,7 +187,7 @@ public function getSoilHum($devIds)
 public function getSoilPh($devIds)
 {
     $sensors = ['soil1_ph', 'soil2_ph'];
-    return $this->getSensorData($devIds, $sensors, 'pH tanah', 0.1);
+    return $this->getSensorData($devIds, $sensors, 'pH tanah');
 }
 public function getSoilTemp($devIds)
 {

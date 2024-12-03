@@ -62,7 +62,7 @@ class DashboardController extends Controller
         
             $activeTodos = [];
         
-            foreach ($plantTodos as $todo) {  // Perbaikan di sini
+            foreach ($plantTodos as $todo) {  
                 $todoStart = $todo->hand_day;
                 $todoEnd = $todoStart + $todo->hand_day_toleran;
         
@@ -131,7 +131,7 @@ class DashboardController extends Controller
             ->value('ds_name');
     }
 
-    private function getSensorData($devIds, $sensors, $sensorType, $valueModifier = 1)
+    private function getSensorData($devIds, $sensors, $sensorType)
     {
         $data = [];
 
@@ -151,8 +151,8 @@ class DashboardController extends Controller
                 continue;
             }
 
-            $minValue = $sensorLimits->ds_min_norm_value * $valueModifier;
-            $maxValue = $sensorLimits->ds_max_norm_value * $valueModifier;
+            $minValue = $sensorLimits->ds_min_norm_value;
+            $maxValue = $sensorLimits->ds_max_norm_value;
             $minDangerAct = $sensorLimits->min_danger_action;
             $maxDangerAct = $sensorLimits->max_danger_action;
 
@@ -162,7 +162,7 @@ class DashboardController extends Controller
             $sensorName = $this->getSensorName($sensor);
 
             if ($sensorData) {
-                $readValue = $sensorData->read_value * $valueModifier;
+                $readValue = $sensorData->read_value;
 
                 if ($readValue >= $minValue && $readValue <= $maxValue) {
                     $valueStatus = 'OK';
@@ -181,7 +181,7 @@ class DashboardController extends Controller
                     $actionMessage = "Periksa kondisi lebih lanjut untuk $sensorType.";
                 }
 
-                $readValue = $sensorData->read_value * $valueModifier;
+                $readValue = $sensorData->read_value;
 
                 $data[] = [
                     'sensor' => $sensor,
