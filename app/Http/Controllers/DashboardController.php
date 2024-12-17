@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Plant;
+use App\Models\Site;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -88,14 +89,21 @@ class DashboardController extends Controller
                 'todos' => $activeTodos
             ];
         }
-        
+
+        $siteLon = Site::where('site_id', $siteId)
+        ->pluck('site_lon');
+        $siteLat = Site::where('site_id', $siteId)
+        ->pluck('site_lat');
+
         return response()->json([
             'site_id' => $siteId,
+            'site_lat' => $siteLat,
+            'site_lon' => $siteLon,
             'temperature' => $temperatureData,
             'humidity' => $humidityData,
             'plants' => $plants,  
             'todos' => $todos,
-            'last_updated' => $lastUpdated  
+            'last_updated' => $lastUpdated 
         ]);
     }        
 
@@ -140,7 +148,7 @@ class DashboardController extends Controller
                 ->select('ds_id', 'read_value', 'read_date')
                 ->where('ds_id', $sensor)
                 ->whereIn('dev_id', $devIds)
-                ->where('read_date', '<=', now()->setTimezone('Asia/Jakarta'))
+                ->where('read_date', '<=', now()->setTimezone('Asia/Jakarta')) #buat variabel nampung tanggal
                 ->orderBy('read_date', 'DESC')
                 ->first();
 
