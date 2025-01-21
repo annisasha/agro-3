@@ -11,14 +11,23 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        // Ambil informasi pengguna dari token
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
         $siteId = $request->input('site_id');
 
         if (empty($siteId)) {
             return response()->json(['message' => 'Pilih Site'], 400);
         }
 
+        // Filter perangkat berdasarkan user yang login
         $devIds = DB::table('tm_device')
             ->where('site_id', $siteId)
+            ->where('user_id', $user->id) // Tambahkan filter berdasarkan user
             ->pluck('dev_id');
 
         if ($devIds->isEmpty()) {
@@ -208,5 +217,24 @@ class DashboardController extends Controller
     {
         $sensors = ['env_hum'];
         return $this->getSensorData($devIds, $sensors, 'Kelembapan Lingkungan');
+    }
+
+    public function getUserSites(Request $request)
+    {
+        $userId = $request->user()->id; // Mendapatkan ID pengguna yang sedang login
+
+        $siteIds = DB::table('tm_device')
+            ->where('user_id', $userId) // Asumsi ada kolom user_id di tm_device
+            ->pluck('site_id')
+            ->unique();
+
+        if ($siteIds->isEmpty()) {
+            return response()->json(['message' => 'Tidak ada site terkait untuk user ini'], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'site_ids' => $siteIds
+        ]);
     }
 }
