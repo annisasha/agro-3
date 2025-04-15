@@ -27,7 +27,7 @@ class AuthController extends Controller
 
         // Check the password without hashing
         if ($request->user_pass === $user->user_pass) {
-            $token = $user->createToken('AgroFIT')->plainTextToken;
+            $token = $user->createToken('Coba')->plainTextToken;
 
             return response()->json([
                 'message' => 'Login berhasil',
