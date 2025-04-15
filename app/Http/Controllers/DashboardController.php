@@ -11,7 +11,6 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // Ambil informasi pengguna dari token
         $user = $request->user();
 
         if (!$user) {
@@ -19,29 +18,43 @@ class DashboardController extends Controller
         }
 
         $siteId = $request->input('site_id');
-
         if (empty($siteId)) {
             return response()->json(['message' => 'Pilih Site'], 400);
         }
 
-        // Filter perangkat berdasarkan user yang login
-        $devIds = DB::table('tm_device')
+        // ✅ DEBUG: Log informasi user & site
+        Log::info('=== DEBUG: User Login Info ===', [
+            'user_name' => $user->user_name,
+            'user_id' => $user->id,
+            'site_id' => $siteId
+        ]);
+
+        // ✅ DEBUG: Coba query langsung berdasarkan user_name
+        $devQuery = DB::table('tm_device')
             ->where('site_id', $siteId)
-            ->where('user_id', $user->id) // Tambahkan filter berdasarkan user
-            ->pluck('dev_id');
+            ->where('user_id', trim($user->user_name));
+
+        Log::info('=== DEBUG: SQL Query Preview ===', [
+            'sql' => $devQuery->toSql(),
+            'bindings' => $devQuery->getBindings()
+        ]);
+
+        $devIds = $devQuery->pluck('dev_id');
+
+        // ✅ DEBUG: Cek hasil query
+        Log::info('=== DEBUG: Device IDs ===', $devIds->toArray());
 
         if ($devIds->isEmpty()) {
             return response()->json(['message' => 'Site tidak ditemukan'], 404);
         }
 
+        // ... lanjutkan kode aslinya
         $temperatureData = $this->getTemperature($devIds);
         $humidityData = $this->getHumidity($devIds);
-
         $lastUpdated = $this->getLastUpdatedDate($devIds);
 
         $plants = Plant::whereIn('dev_id', $devIds)->get()->map(function ($plant) {
             $commodityVariety = $plant->getCommodityVariety();
-
             return [
                 'pl_id' => $plant->pl_id,
                 'pl_name' => $plant->pl_name,
@@ -68,22 +81,22 @@ class DashboardController extends Controller
                 ->where('pt_id', $plant['pt_id'])
                 ->orderBy('hand_day', 'ASC')
                 ->get();
-        
+
             $activeTodos = [];
-        
-            foreach ($plantTodos as $todo) {  
+
+            foreach ($plantTodos as $todo) {
                 $todoStart = $todo->hand_day;
                 $todoEnd = $todoStart + $todo->hand_day_toleran;
-        
+
                 if ($plantAge >= $todoStart && $plantAge <= $todoEnd) {
                     $todoDate = $plantDate->copy()->addDays($todo->hand_day);
                     $tolerantDate = $plantDate->copy()->addDays($todoEnd);
-        
+
                     $activeTodos[] = [
                         'hand_title' => $todo->hand_title,
                         'hand_day' => $todo->hand_day,
                         'hand_day_toleran' => $todo->hand_day_toleran,
-                        'fertilizer_type' => isset($todo->fertilizer_type) ? $todo->fertilizer_type : 'N/A',
+                        'fertilizer_type' => $todo->fertilizer_type ?? 'N/A',
                         'todo_date' => $todoDate->format('d-m-Y'),
                         'tolerant_date' => $tolerantDate->format('d-m-Y'),
                         'days_remaining' => $todoStart - $plantAge,
@@ -91,22 +104,23 @@ class DashboardController extends Controller
                     ];
                 }
             }
-        
+
             $todos[] = [
                 'plant_id' => $plant['pl_id'],
                 'todos' => $activeTodos
             ];
         }
-        
+
         return response()->json([
             'site_id' => $siteId,
             'temperature' => $temperatureData,
             'humidity' => $humidityData,
-            'plants' => $plants,  
+            'plants' => $plants,
             'todos' => $todos,
-            'last_updated' => $lastUpdated  
+            'last_updated' => $lastUpdated
         ]);
-    }        
+    }
+
 
     private function getLastUpdatedDate($devIds)
     {
@@ -142,40 +156,48 @@ class DashboardController extends Controller
 
     private function getSensorData($devIds, $sensors, $sensorType)
     {
-        $data = [];
+        Log::info("🔍 Sensor IDs yang dicari: ", $sensors);
+        Log::info("🔍 Device IDs yang dicari: ", $devIds->toArray());
+
+        $start = microtime(true);
+
+        // Ambil semua data sensor sekaligus
+        $rawData = DB::table('tm_sensor_read')
+            ->select('ds_id', 'dev_id', 'read_value', 'read_date')
+            ->whereIn('ds_id', $sensors)
+            ->whereIn('dev_id', $devIds)
+            ->where('read_date', '<=', now()->setTimezone('Asia/Jakarta'))
+            ->orderBy('read_date', 'DESC')
+            ->get();
+
+        Log::info("📦 Raw data sensor yang ditemukan:", $rawData->toArray());
+
+        $results = [];
 
         foreach ($sensors as $sensor) {
-            $sensorData = DB::table('tm_sensor_read')
-                ->select('ds_id', 'read_value', 'read_date')
-                ->where('ds_id', $sensor)
-                ->whereIn('dev_id', $devIds)
-                ->where('read_date', '<=', now()->setTimezone('Asia/Jakarta'))
-                ->orderBy('read_date', 'DESC')
-                ->first();
+            // Ambil data sensor pertama (terbaru) per sensor
+            $sensorData = $rawData->firstWhere('ds_id', $sensor);
 
             $sensorLimits = $this->getSensorThresholds($sensor);
-
             if (!$sensorLimits) {
-                Log::warning("No thresholds found for sensor: $sensor");
+                Log::warning("⚠️ No thresholds found for sensor: $sensor");
                 continue;
             }
 
-            $minValue = $sensorLimits->ds_min_norm_value;
-            $maxValue = $sensorLimits->ds_max_norm_value;
-            $minDangerAct = $sensorLimits->min_danger_action;
-            $maxDangerAct = $sensorLimits->max_danger_action;
-
-            $valueStatus = '';
-            $actionMessage = '';
-            $statusMessage = '';
             $sensorName = $this->getSensorName($sensor);
 
             if ($sensorData) {
                 $readValue = $sensorData->read_value;
+                $minValue = $sensorLimits->ds_min_norm_value;
+                $maxValue = $sensorLimits->ds_max_norm_value;
+                $minDangerAct = $sensorLimits->min_danger_action;
+                $maxDangerAct = $sensorLimits->max_danger_action;
 
+                // Evaluasi status
                 if ($readValue >= $minValue && $readValue <= $maxValue) {
                     $valueStatus = 'OK';
                     $statusMessage = "$sensorType dalam kondisi normal";
+                    $actionMessage = '';
                 } elseif ($readValue < $minValue) {
                     $valueStatus = 'Danger';
                     $statusMessage = "$sensorType di bawah batas normal";
@@ -190,12 +212,10 @@ class DashboardController extends Controller
                     $actionMessage = "Periksa kondisi lebih lanjut untuk $sensorType.";
                 }
 
-                $readValue = $sensorData->read_value;
-
-                $data[] = [
+                $results[] = [
                     'sensor' => $sensor,
                     'read_value' => $readValue,
-                    'read_date' => $sensorData->read_date ?? null,
+                    'read_date' => $sensorData->read_date,
                     'value_status' => $valueStatus,
                     'status_message' => $statusMessage,
                     'action_message' => $actionMessage,
@@ -204,18 +224,22 @@ class DashboardController extends Controller
             }
         }
 
-        return $data;
+        $duration = round(microtime(true) - $start, 3);
+        Log::info("✅ getSensorData() batch selesai dalam $duration detik");
+
+        return $results;
     }
+
 
     public function getTemperature($devIds)
     {
-        $sensors = ['env_temp'];
+        $sensors = ['temp'];
         return $this->getSensorData($devIds, $sensors, 'Suhu Lingkungan');
     }
 
     public function getHumidity($devIds)
     {
-        $sensors = ['env_hum'];
+        $sensors = ['hum'];
         return $this->getSensorData($devIds, $sensors, 'Kelembapan Lingkungan');
     }
 

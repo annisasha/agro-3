@@ -10,14 +10,16 @@ class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
-    protected $table = 'tm_user'; 
-    protected $primaryKey = 'user_id'; 
-    public $timestamps = false; 
+    protected $table = 'tm_user';
+    protected $primaryKey = 'user_id';
+    public $incrementing = false;
+    protected $keyType = 'string';
+    public $timestamps = false;
 
     protected $fillable = [
         'user_name',
         'user_email',
-        'user_pass', 
+        'user_pass',
         'user_phone',
         'role_id',
         'user_sts',
@@ -26,8 +28,13 @@ class User extends Authenticatable
     ];
 
     protected $hidden = [
-        'user_pass', 
+        'user_pass',
     ];
+
+    public function getAuthPassword()
+    {
+        return $this->user_pass;
+    }
 
     public function setPasswordAttribute($value)
     {
