@@ -32,6 +32,7 @@ class RealtimeController extends Controller
 
         $activeSensors = DB::table('td_device_sensors')
             ->where('ds_sts', 1)
+            ->where('ds_id', 'LIKE', 'soil_%')
             ->pluck('ds_id');
 
         if ($activeSensors->isEmpty()) {
