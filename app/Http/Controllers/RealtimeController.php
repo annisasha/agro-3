@@ -52,10 +52,10 @@ class RealtimeController extends Controller
 
     private function getLastUpdatedDate($devIds)
     {
-        $latestReadDate = DB::table('tm_sensor_read')
+        $latestReadDate = DB::table('tm_sensor_read_update')
             ->whereIn('dev_id', $devIds)
-            ->where('read_date', '<=', now()->setTimezone('Asia/Jakarta'))
-            ->max('read_date');  
+            ->where('read_update_date', '<=', now()->setTimezone('Asia/Jakarta'))
+            ->max('read_update_date');
 
         return $latestReadDate ? \Carbon\Carbon::parse($latestReadDate)->format('d-m-Y H:i') : null;
     }
@@ -83,115 +83,115 @@ class RealtimeController extends Controller
             ->value('ds_name');
     }
 
-private function getSensorData($devIds, $sensors, $sensorType)
-{
-    $data = [];
+    private function getSensorData($devIds, $sensors, $sensorType)
+    {
+        $data = [];
 
-    foreach ($sensors as $sensor) {
-        $sensorData = DB::table('tm_sensor_read')
-            ->select('ds_id', 'read_value', 'read_date')
-            ->where('ds_id', $sensor)
-            ->whereIn('dev_id', $devIds)
-            ->where('read_date', '<=', now()->setTimezone('Asia/Jakarta'))
-            ->orderBy('read_date', 'DESC')
-            ->first();
+        foreach ($sensors as $sensor) {
+            $sensorData = DB::table('tm_sensor_read_update')
+                ->select('ds_id', 'read_update_value', 'read_update_date')
+                ->where('ds_id', $sensor)
+                ->whereIn('dev_id', $devIds)
+                ->where('read_update_date', '<=', now()->setTimezone('Asia/Jakarta'))
+                ->orderBy('read_update_date', 'DESC')
+                ->first();
 
-        $sensorLimits = $this->getSensorThresholds($sensor);
+            $sensorLimits = $this->getSensorThresholds($sensor);
 
-        if (!$sensorLimits) {
-            Log::warning("No thresholds found for sensor: $sensor");
-            continue;
-        }
-
-        $minValue = $sensorLimits->ds_min_norm_value;
-        $maxValue = $sensorLimits->ds_max_norm_value;
-        $minDangerAct = $sensorLimits->min_danger_action;
-        $maxDangerAct = $sensorLimits->max_danger_action;
-
-        $valueStatus = '';
-        $actionMessage = '';
-        $statusMessage = '';
-        $sensorName = $this->getSensorName($sensor);
-
-        if ($sensorData) {
-            $readValue = $sensorData->read_value;
-
-            if ($readValue >= $minValue && $readValue <= $maxValue) {
-                $valueStatus = 'OK';
-                $statusMessage = "$sensorType dalam kondisi normal";
-            } elseif ($readValue < $minValue) {
-                $valueStatus = 'Danger';
-                $statusMessage = "$sensorType di bawah batas normal";
-                $actionMessage = $minDangerAct;
-            } elseif ($readValue > $maxValue) {
-                $valueStatus = 'Danger';
-                $statusMessage = "$sensorType di atas batas normal";
-                $actionMessage = $maxDangerAct;
-            } else {
-                $valueStatus = 'Warning';
-                $statusMessage = "$sensorType mendekati ambang batas";
-                $actionMessage = "Periksa kondisi lebih lanjut untuk $sensorType.";
+            if (!$sensorLimits) {
+                Log::warning("No thresholds found for sensor: $sensor");
+                continue;
             }
 
-            $data[] = [
-                'sensor' => $sensor,
-                'read_value' => $readValue,
-                'read_date' => $sensorData->read_date ?? null,
-                'value_status' => $valueStatus,
-                'status_message' => $statusMessage,
-                'action_message' => $actionMessage,
-                'sensor_name' => $sensorName
-            ];
+            $minValue = $sensorLimits->ds_min_norm_value;
+            $maxValue = $sensorLimits->ds_max_norm_value;
+            $minDangerAct = $sensorLimits->min_danger_action;
+            $maxDangerAct = $sensorLimits->max_danger_action;
+
+            $valueStatus = '';
+            $actionMessage = '';
+            $statusMessage = '';
+            $sensorName = $this->getSensorName($sensor);
+
+            if ($sensorData) {
+                $readValue = $sensorData->read_update_value;
+
+                if ($readValue >= $minValue && $readValue <= $maxValue) {
+                    $valueStatus = 'OK';
+                    $statusMessage = "$sensorType dalam kondisi normal";
+                } elseif ($readValue < $minValue) {
+                    $valueStatus = 'Danger';
+                    $statusMessage = "$sensorType di bawah batas normal";
+                    $actionMessage = $minDangerAct;
+                } elseif ($readValue > $maxValue) {
+                    $valueStatus = 'Danger';
+                    $statusMessage = "$sensorType di atas batas normal";
+                    $actionMessage = $maxDangerAct;
+                } else {
+                    $valueStatus = 'Warning';
+                    $statusMessage = "$sensorType mendekati ambang batas";
+                    $actionMessage = "Periksa kondisi lebih lanjut untuk $sensorType.";
+                }
+
+                $data[] = [
+                    'sensor' => $sensor,
+                    'read_update_value' => $readValue,
+                    'read_update_date' => $sensorData->read_update_date ?? null,
+                    'value_status' => $valueStatus,
+                    'status_message' => $statusMessage,
+                    'action_message' => $actionMessage,
+                    'sensor_name' => $sensorName
+                ];
+            }
         }
+
+        return $data;
     }
 
-    return $data;
-}
+    public function getNitrogen($devIds)
+    {
+        $sensors = ['soil1_nitro', 'soil2_nitro'];
+        return $this->getSensorData($devIds, $sensors, 'Nitrogen');
+    }
 
-public function getNitrogen($devIds)
-{
-    $sensors = ['soil1_nitro', 'soil2_nitro'];
-    return $this->getSensorData($devIds, $sensors, 'Nitrogen');
-}
+    public function getFosfor($devIds)
+    {
+        $sensors = ['soil1_phos', 'soil2_phos'];
+        return $this->getSensorData($devIds, $sensors, 'Fosfor');
+    }
 
-public function getFosfor($devIds)
-{
-    $sensors = ['soil1_phos', 'soil2_phos'];
-    return $this->getSensorData($devIds, $sensors, 'Fosfor');
-}
+    public function getKalium($devIds)
+    {
+        $sensors = ['soil1_pot', 'soil2_pot'];
+        return $this->getSensorData($devIds, $sensors, 'Kalium');
+    }
 
-public function getKalium($devIds)
-{
-    $sensors = ['soil1_pot', 'soil2_pot'];
-    return $this->getSensorData($devIds, $sensors, 'Kalium');
-}
+    public function getTDS($devIds)
+    {
+        $sensors = ['soil1_tds', 'soil2_tds'];
+        return $this->getSensorData($devIds, $sensors, 'TDS');
+    }
 
-public function getTDS($devIds)
-{
-    $sensors = ['soil1_tds', 'soil2_tds'];
-    return $this->getSensorData($devIds, $sensors, 'TDS');
-}
+    public function getEC($devIds)
+    {
+        $sensors = ['soil1_con', 'soil2_con'];
+        return $this->getSensorData($devIds, $sensors, 'EC');
+    }
 
-public function getEC($devIds)
-{
-    $sensors = ['soil1_con', 'soil2_con'];
-    return $this->getSensorData($devIds, $sensors, 'EC');
-}
+    public function getSoilHum($devIds)
+    {
+        $sensors = ['soil1_hum', 'soil2_hum'];
+        return $this->getSensorData($devIds, $sensors, 'Kelembapan tanah');
+    }
 
-public function getSoilHum($devIds)
-{
-    $sensors = ['soil1_hum', 'soil2_hum'];
-    return $this->getSensorData($devIds, $sensors, 'Kelembapan tanah');
-}
-
-public function getSoilPh($devIds)
-{
-    $sensors = ['soil1_ph', 'soil2_ph'];
-    return $this->getSensorData($devIds, $sensors, 'pH tanah');
-}
-public function getSoilTemp($devIds)
-{
-    $sensors = ['soil1_temp', 'soil2_temp'];
-    return $this->getSensorData($devIds, $sensors, 'Suhu tanah');
-}
+    public function getSoilPh($devIds)
+    {
+        $sensors = ['soil1_ph', 'soil2_ph'];
+        return $this->getSensorData($devIds, $sensors, 'pH tanah');
+    }
+    public function getSoilTemp($devIds)
+    {
+        $sensors = ['soil1_temp', 'soil2_temp'];
+        return $this->getSensorData($devIds, $sensors, 'Suhu tanah');
+    }
 }
