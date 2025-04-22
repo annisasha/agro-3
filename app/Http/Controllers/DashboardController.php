@@ -13,6 +13,17 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
+        Log::info('Dashboard accessed by:', [
+            'user_id' => $user?->user_id,
+            'username' => $user?->user_name,
+            'site_id' => $request->site_id,
+        ]);
+
+        if (!$request->site_id) {
+            Log::warning('Dashboard request tanpa site_id oleh user: ' . ($user?->user_name ?? 'Guest'));
+            return response()->json(['message' => 'Parameter site_id dibutuhkan'], 400);
+        }
+
         if (!$user) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
