@@ -11,6 +11,7 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Riwayat2Controller;
 use App\Http\Controllers\TanamanController;
+use App\Http\Controllers\ChatbotController;
 
 Route::get('dashboard', [DashboardController::class, 'index']);
 Route::get('realtime', [RealtimeController::class, 'index']);
@@ -35,8 +36,10 @@ Route::post('/tanaman', [TanamanController::class, 'store']);
 Route::put('/tanaman/{pl_id}', [TanamanController::class, 'update']);
 Route::delete('/tanaman/{pl_id}', [TanamanController::class, 'destroy']); 
 
-Route::post('/login', [AuthController::class, 'login']);
-Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
-Route::middleware('auth:sanctum')->get('/profile', [AuthController::class, 'show']);
+// Route::post('/login', [AuthController::class, 'login']);
+// Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
+// Route::middleware('auth:sanctum')->get('/profile', [AuthController::class, 'show']);
 
-Route::post('/register', [RegisterController::class, 'register']);
+// Route::post('/register', [RegisterController::class, 'register']);
+
+Route::post('/chat/send', [ChatbotController::class, 'send']);
