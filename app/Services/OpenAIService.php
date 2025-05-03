@@ -3,24 +3,27 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use OpenAI\Laravel\Facades\OpenAI;
 
 class OpenAIService
 {
     protected $apiKey;
+    protected $model;
 
     public function __construct()
     {
-        $this->apiKey = config('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'); 
+        $this->apiKey = config('services.openai.key');
+        $this->model = config('services.openai.model');
     }
 
-    public function ask(string $message): string
+    public function ask($message)
     {
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $this->apiKey,
         ])->post('https://api.openai.com/v1/chat/completions', [
-            'model' => 'gpt-3.5-turbo',
+            'model' => $this->model,
             'messages' => [
-                ['role' => 'system', 'content' => 'Kamu adalah asisten virtual agrikultur yang membantu petani memahami data lahan.'],
+                ['role' => 'system', 'content' => 'Kamu adalah asisten pertanian cerdas yang menjelaskan data dan informasi dengan ramah dan sederhana.'],
                 ['role' => 'user', 'content' => $message],
             ],
         ]);
@@ -29,6 +32,6 @@ class OpenAIService
             return $response->json()['choices'][0]['message']['content'];
         }
 
-        return "Maaf, saya tidak dapat memproses permintaan saat ini.";
+        return "Maaf, terjadi kesalahan saat memproses permintaan.";
     }
 }

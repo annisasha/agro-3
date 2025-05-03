@@ -36,13 +36,10 @@ Route::post('/tanaman', [TanamanController::class, 'store']);
 Route::put('/tanaman/{pl_id}', [TanamanController::class, 'update']);
 Route::delete('/tanaman/{pl_id}', [TanamanController::class, 'destroy']); 
 
-Route::post('/login', [AuthController::class, 'login']);
-Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
-Route::middleware('auth:sanctum')->get('/profile', [AuthController::class, 'show']);
+// Route::post('/login', [AuthController::class, 'login']);
+// Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
+// Route::middleware('auth:sanctum')->get('/profile', [AuthController::class, 'show']);
 
-Route::post('/register', [RegisterController::class, 'register']);
+// Route::post('/register', [RegisterController::class, 'register']);
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/chat/send', [ChatbotController::class, 'send']);
-    Route::get('/chat/history', [ChatbotController::class, 'history']);
-});
+Route::post('/chat/send', [ChatbotController::class, 'send']);

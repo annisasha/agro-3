@@ -3,51 +3,48 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Chatbot;
-use App\Services\OpenAIService;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 
 class ChatbotController extends Controller
 {
-    protected $openAI;
-
-    public function __construct(OpenAIService $openAI)
-    {
-        $this->openAI = $openAI;
-    }
-
     public function send(Request $request)
     {
         $request->validate([
-            'message' => 'required|string'
+            'message' => 'required|string',
         ]);
 
+        $apiKey = env('OPENAI_API_KEY');
 
-        $userMessage = $request->input('message');
-        $aiResponse = $this->openAI->ask($userMessage);
+        $payload = [
+            'model'    => 'gpt-3.5-turbo',
+            'messages' => [
+                [
+                    'role'    => 'system',
+                    'content' => 'Kamu adalah asisten pertanian yang menjelaskan data dengan ramah dan mudah dimengerti.',
+                ],
+                [
+                    'role'    => 'user',
+                    'content' => $request->message,
+                ],
+            ],
+        ];
 
-        $chat = Chatbot::create([
-            'message' => $userMessage,
-            'response' => $aiResponse,
-        ]);
+        $response = Http::withToken($apiKey)
+                        ->withOptions(['verify' => false])  // non-aktifkan SSL verify sementara
+                        ->post('https://api.openai.com/v1/chat/completions', $payload);
+
+        if (! $response->successful()) {
+            return response()->json([
+                'error' => 'OpenAI request failed',
+                'details' => $response->body(),
+            ], $response->status());
+        }
+
+        $data = $response->json();
 
         return response()->json([
-            'success' => true,
-            'data' => $chat
+            'question' => $request->message,
+            'response' => $data['choices'][0]['message']['content'] ?? 'Tidak ada balasan.',
         ]);
     }
-
-    // public function history()
-    // {
-    //     $user = Auth::user();
-
-    //     $chats = Chatbot::where('user_id', $user->id)
-    //                 ->orderBy('created_at', 'desc')
-    //                 ->get();
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'data' => $chats
-    //     ]);
-    // }
 }
