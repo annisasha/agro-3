@@ -23,7 +23,7 @@ class RealtimeController extends Controller
 
         $devIds = DB::table('tm_device')
             ->where('site_id', $siteId)
-            ->where('user_id', $user->user_name)
+            ->where('user_id', $user->user_id)
             ->pluck('dev_id');
 
         if ($devIds->isEmpty()) {
@@ -33,7 +33,11 @@ class RealtimeController extends Controller
         $activeSensors = DB::table('td_device_sensors')
             ->where('ds_sts', 1)
             ->where('ds_id', 'LIKE', 'soil_%')
-            ->pluck('ds_id');
+            ->pluck('ds_id')
+            ->filter(function ($id) {
+                return preg_match('/\d+$/', $id); // hanya ds_id yang diakhiri angka
+            })
+            ->values(); // reset indeks
 
         if ($activeSensors->isEmpty()) {
             return response()->json(['message' => 'Tidak ada sensor aktif'], 404);
@@ -53,12 +57,12 @@ class RealtimeController extends Controller
     {
         $data = [];
 
-        $rawData = DB::table('tm_sensor_read_update')
-            ->select('ds_id', 'dev_id', 'read_update_value', 'read_update_date')
+        $rawData = DB::table('tm_sensor_read')
+            ->select('ds_id', 'dev_id', 'read_value', 'read_date')
             ->whereIn('ds_id', $sensors)
             ->whereIn('dev_id', $devIds)
-            ->where('read_update_date', '<=', now()->setTimezone('Asia/Jakarta'))
-            ->orderBy('read_update_date', 'DESC')
+            ->where('read_date', '<=', now()->setTimezone('Asia/Jakarta'))
+            ->orderBy('read_date', 'DESC')
             ->get();
 
         foreach ($sensors as $sensor) {
@@ -70,7 +74,7 @@ class RealtimeController extends Controller
 
             if (!$sensorData) continue;
 
-            $readValue = $sensorData->read_update_value;
+            $readValue = $sensorData->read_value;
             $minValue = $sensorLimits->ds_min_norm_value;
             $maxValue = $sensorLimits->ds_max_norm_value;
             $minDangerAct = $sensorLimits->min_danger_action;
@@ -94,7 +98,7 @@ class RealtimeController extends Controller
                 'sensor' => $sensor,
                 'sensor_name' => $sensorName,
                 'read_value' => $readValue,
-                'read_date' => $sensorData->read_update_date,
+                'read_date' => $sensorData->read_date,
                 'value_status' => $valueStatus,
                 'status_message' => $statusMessage,
                 'action_message' => $actionMessage
@@ -106,10 +110,10 @@ class RealtimeController extends Controller
 
     private function getLastUpdatedDate($devIds)
     {
-        $latestReadDate = DB::table('tm_sensor_read_update')
+        $latestReadDate = DB::table('tm_sensor_read')
             ->whereIn('dev_id', $devIds)
-            ->where('read_update_date', '<=', now()->setTimezone('Asia/Jakarta'))
-            ->max('read_update_date');
+            ->where('read_date', '<=', now()->setTimezone('Asia/Jakarta'))
+            ->max('read_date');
 
         return $latestReadDate ? \Carbon\Carbon::parse($latestReadDate)->format('d-m-Y H:i') : null;
     }

@@ -43,7 +43,7 @@ class DashboardController extends Controller
         // ✅ DEBUG: Coba query langsung berdasarkan user_name
         $devQuery = DB::table('tm_device')
             ->where('site_id', $siteId)
-            ->where('user_id', trim($user->user_name));
+            ->where('user_id', $user->user_id);
 
         Log::info('=== DEBUG: SQL Query Preview ===', [
             'sql' => $devQuery->toSql(),
@@ -244,13 +244,13 @@ class DashboardController extends Controller
 
     public function getTemperature($devIds)
     {
-        $sensors = ['temp'];
+        $sensors = ['env_temp'];
         return $this->getSensorData($devIds, $sensors, 'Suhu Lingkungan');
     }
 
     public function getHumidity($devIds)
     {
-        $sensors = ['hum'];
+        $sensors = ['env_hum'];
         return $this->getSensorData($devIds, $sensors, 'Kelembapan Lingkungan');
     }
 

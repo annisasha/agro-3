@@ -18,8 +18,9 @@ Route::middleware('auth:sanctum')->get('/user/sites', [UserSiteController::class
 // Route::middleware('auth:sanctum')->get('/dashboard', [DashboardController::class, 'index']);
 // Route::get('realtime', [RealtimeController::class, 'index']);
 Route::middleware('auth:sanctum')->get('/realtime', [RealtimeController::class, 'index']);
-Route::post('riwayat', [RiwayatController::class, 'index']);
-Route::post('riwayat2', [Riwayat2Controller::class, 'index']);
+Route::middleware('auth:sanctum')->post('/riwayat2', [Riwayat2Controller::class, 'index']);
+// Route::post('riwayat', [RiwayatController::class, 'index']);
+// Route::post('riwayat2', [Riwayat2Controller::class, 'index']);
 
 Route::get('/area', [AreaController::class, 'index']);
 Route::get('/area/{id}', [AreaController::class, 'show']);
