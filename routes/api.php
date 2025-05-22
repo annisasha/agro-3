@@ -12,6 +12,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Riwayat2Controller;
 use App\Http\Controllers\TanamanController;
 use App\Http\Controllers\UserSiteController;
+use App\Http\Controllers\AreaOptionController;
 
 Route::middleware('auth:sanctum')->get('/user/sites', [UserSiteController::class, 'index']);
 
@@ -19,6 +20,7 @@ Route::middleware('auth:sanctum')->get('/user/sites', [UserSiteController::class
 // Route::get('realtime', [RealtimeController::class, 'index']);
 Route::middleware('auth:sanctum')->get('/realtime', [RealtimeController::class, 'index']);
 Route::middleware('auth:sanctum')->post('/riwayat2', [Riwayat2Controller::class, 'index']);
+Route::middleware('auth:sanctum')->get('/area-options', [AreaOptionController::class, 'index']);
 // Route::post('riwayat', [RiwayatController::class, 'index']);
 // Route::post('riwayat2', [Riwayat2Controller::class, 'index']);
 

@@ -17,6 +17,7 @@ class User extends Authenticatable
     public $timestamps = false;
 
     protected $fillable = [
+        'user_id',
         'user_name',
         'user_email',
         'user_pass',
@@ -36,8 +37,8 @@ class User extends Authenticatable
         return $this->user_pass;
     }
 
-    public function setPasswordAttribute($value)
-    {
-        $this->attributes['user_pass'] = bcrypt($value);
-    }
+    // public function setPasswordAttribute($value)
+    // {
+    //     $this->attributes['user_pass'] = bcrypt($value);
+    // }
 }
