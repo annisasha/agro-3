@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
@@ -21,18 +22,14 @@ class AuthController extends Controller
             return response()->json(['message' => 'Username atau password salah'], 401);
         }
 
-        // Log for debugging
-        Log::info('Input password: ' . $request->user_pass);
-        Log::info('Password in DB: ' . $user->user_pass);
-
-        // Check the password without hashing
-        if ($request->user_pass === $user->user_pass) {
+        // Verifikasi hash password
+        if (Hash::check($request->user_pass, $user->user_pass)) {
             $token = $user->createToken('AgroFIT')->plainTextToken;
 
             return response()->json([
                 'message' => 'Login berhasil',
                 'token' => $token,
-                'user' => $user->only(['user_id', 'user_name', 'user_email']), // Return only necessary user fields
+                'user' => $user->only(['user_id', 'user_name', 'user_email']),
             ]);
         }
 

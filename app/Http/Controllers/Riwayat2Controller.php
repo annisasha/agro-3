@@ -62,12 +62,12 @@ class Riwayat2Controller extends Controller
                     })
                     ->pluck('ds_id')
                     ->toArray();
-        
+
                 // Intersect dengan sensor yang memang terdaftar di site
                 $selectedSensors = array_values(array_intersect($siteSensors->toArray(), $filteredDsIds));
             }
         }
-        
+
 
         Log::info('✅ Final sensor list setelah filter area:', $selectedSensors);
 
@@ -80,16 +80,16 @@ class Riwayat2Controller extends Controller
 
         Log::info('📅 Final filter date range:', [$start, $end]);
 
-        $data = DB::table('tm_sensor_read_update')
+        $data = DB::table('tm_sensor_read')
             ->select(
                 'ds_id',
-                DB::raw('MIN(read_update_date) as read_update_date'),
-                DB::raw('MAX(read_update_value) as read_update_value')
+                DB::raw('MIN(read_date) as read_date'),
+                DB::raw('MAX(read_value) as read_value')
             )
             ->whereIn('ds_id', $selectedSensors)
-            ->whereBetween('read_update_date', [$start, $end])
-            ->groupBy(DB::raw('DATE(read_update_date), ds_id'))
-            ->orderBy('read_update_date', 'ASC')
+            ->whereBetween('read_date', [$start, $end])
+            ->groupBy(DB::raw('DATE(read_date), ds_id'))
+            ->orderBy('read_date', 'ASC')
             ->get();
 
         Log::info('📦 Jumlah data ditemukan:', ['count' => $data->count()]);
@@ -107,8 +107,8 @@ class Riwayat2Controller extends Controller
             return [
                 'ds_id' => $item->ds_id,
                 'sensor_name' => $sensorName ?? $item->ds_id,
-                'read_update_date' => $item->read_update_date,
-                'read_update_value' => $item->read_update_value,
+                'read_date' => $item->read_date,
+                'read_value' => $item->read_value,
             ];
         });
 
