@@ -11,6 +11,8 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Riwayat2Controller;
 use App\Http\Controllers\TanamanController;
+use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\RingkasanDataController; 
 use App\Http\Controllers\UserSiteController;
 
 Route::middleware('auth:sanctum')->get('/user/sites', [UserSiteController::class, 'index']);
@@ -47,3 +49,13 @@ Route::middleware('auth:sanctum')->get('/dashboard', [DashboardController::class
 
 
 Route::post('/register', [RegisterController::class, 'register']);
+
+Route::middleware('auth:sanctum')->group(function () {
+Route::post('/chat/send', [ChatbotController::class, 'send']);
+Route::get('/chat/history/{name_chat}', [ChatbotController::class, 'getHistoryByNameChat']);
+Route::delete('/chat/history/{name_chat}', [ChatbotController::class, 'deleteByNameChat']);
+Route::get('/chat/names', [ChatbotController::class, 'listChats']);
+Route::put('/chat/rename-chat/{name_chat}', [ChatbotController::class, 'renameChat']);
+Route::post('/chat/new', [ChatbotController::class, 'newChat']);
+Route::post('/data/summary', [RingkasanDataController::class, 'getSummary']);
+});
