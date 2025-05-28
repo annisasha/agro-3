@@ -38,11 +38,20 @@ Route::post('/sensor', [SensorController::class, 'store']);
 Route::put('/sensor/{id}', [SensorController::class, 'update']);
 Route::delete('/sensor/{id}', [SensorController::class, 'destroy']);
 
-Route::get('/tanaman', [TanamanController::class, 'index']);
-Route::get('/tanaman/{pl_id}', [TanamanController::class, 'show']);
-Route::post('/tanaman', [TanamanController::class, 'store']);
-Route::put('/tanaman/{pl_id}', [TanamanController::class, 'update']);
-Route::delete('/tanaman/{pl_id}', [TanamanController::class, 'destroy']);
+// Route::get('/tanaman', [TanamanController::class, 'index']);
+// Route::get('/tanaman/{pl_id}', [TanamanController::class, 'show']);
+// Route::post('/tanaman', [TanamanController::class, 'store']);
+// Route::put('/tanaman/{pl_id}', [TanamanController::class, 'update']);
+// Route::delete('/tanaman/{pl_id}', [TanamanController::class, 'destroy']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/tanaman', [TanamanController::class, 'index']);
+    Route::get('/tanaman/{pl_id}', [TanamanController::class, 'show']);
+    Route::post('/tanaman', [TanamanController::class, 'store']);
+    Route::put('/tanaman/{pl_id}', [TanamanController::class, 'update']);
+    Route::delete('/tanaman/{pl_id}', [TanamanController::class, 'destroy']);
+});
+
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
