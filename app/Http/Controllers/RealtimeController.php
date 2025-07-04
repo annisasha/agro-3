@@ -21,13 +21,23 @@ class RealtimeController extends Controller
             return response()->json(['message' => 'Pilih Site'], 400);
         }
 
+        // 🔐 Cek apakah site_id ini milik user
+        $isAuthorized = DB::table('tm_device')
+            ->where('site_id', $siteId)
+            ->where('user_id', $user->user_id)
+            ->exists();
+
+        if (!$isAuthorized) {
+            return response()->json(['message' => 'Lahan ini tidak terdaftar sebagai milik anda'], 403);
+        }
+
         $devIds = DB::table('tm_device')
             ->where('site_id', $siteId)
             ->where('user_id', $user->user_id)
             ->pluck('dev_id');
 
         if ($devIds->isEmpty()) {
-            return response()->json(['message' => 'Site tidak ditemukan atau tidak ada device'], 404);
+            return response()->json(['message' => 'Tidak ada alat sensor yang terdaftar ke lahan ini'], 404);
         }
 
         $activeSensors = DB::table('td_device_sensors')
@@ -45,6 +55,13 @@ class RealtimeController extends Controller
 
         $sensorData = $this->getSensorData($devIds, $activeSensors);
         $lastUpdated = $this->getLastUpdatedDate($devIds);
+
+        if (empty($sensorData)) {
+            return response()->json([
+                'message' => 'Tidak ada data sensor untuk lahan ini',
+                'site_id' => $siteId
+            ], 404);
+        }
 
         return response()->json([
             'site_id' => $siteId,

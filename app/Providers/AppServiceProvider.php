@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Auth\Middleware\Authenticate as BaseAuthenticate;
+use App\Http\Middleware\Authenticate;
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -11,7 +14,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(BaseAuthenticate::class, Authenticate::class);
     }
 
     /**

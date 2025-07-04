@@ -33,6 +33,17 @@ class AuthController extends Controller
             ]);
         }
 
+        // if ($request->user_pass === $user->user_pass) {
+        //     $token = $user->createToken('AgroFIT')->plainTextToken;
+
+        //     return response()->json([
+        //         'message' => 'Login berhasil',
+        //         'token' => $token,
+        //         'user' => $user->only(['user_id', 'user_name', 'user_email']),
+        //     ]);
+        // }
+
+
         return response()->json(['message' => 'Username atau password salah'], 401);
     }
 

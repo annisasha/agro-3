@@ -56,7 +56,7 @@ class DashboardController extends Controller
         Log::info('=== DEBUG: Device IDs ===', $devIds->toArray());
 
         if ($devIds->isEmpty()) {
-            return response()->json(['message' => 'Site tidak ditemukan'], 404);
+            return response()->json(['message' => 'Lahan ini tidak terdaftar sebagai milik anda'], 404);
         }
 
         // ... lanjutkan kode aslinya
@@ -81,7 +81,7 @@ class DashboardController extends Controller
         });
 
         if ($plants->isEmpty()) {
-            return response()->json(['message' => 'Tidak ada tanaman pada site ini'], 404);
+            return response()->json(['message' => 'Tidak ada tanaman pada lahan ini'], 404);
         }
 
         $todos = [];
